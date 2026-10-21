@@ -68,13 +68,13 @@ describe("YouTube player lifecycle", () => {
     const bezel = document.querySelector<HTMLElement>(".ytp-bezel")!;
     player.setPlaybackRate(1.02);
     expect(text.textContent).toBe("1.02x");
-    expect(layer.style.display).toBe("");
+    expect(layer.style.display).toBe("block");
     expect(bezel.style.display).toBe("none");
     vi.advanceTimersByTime(400);
     player.setPlaybackRate(1.04);
     vi.advanceTimersByTime(400);
     expect(text.textContent).toBe("1.04x");
-    expect(layer.style.display).toBe("");
+    expect(layer.style.display).toBe("block");
     vi.advanceTimersByTime(250);
     expect(layer.style.display).toBe("none");
     expect(bezel.style.display).toBe("");
@@ -86,7 +86,7 @@ describe("YouTube player lifecycle", () => {
     text.textContent = "native action";
     vi.advanceTimersByTime(650);
     expect(text.textContent).toBe("native action");
-    expect(layer.style.display).toBe("");
+    expect(layer.style.display).toBe("block");
     player.setPlaybackRate(1);
     player.dispose();
     expect(layer.style.display).toBe("none");

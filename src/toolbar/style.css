@@ -191,9 +191,9 @@ button:disabled {
   content: "";
   position: absolute;
   top: calc(100% + 13px);
-  left: calc(50% - 5px);
-  width: 10px;
-  height: 6px;
+  left: calc(50% - 5.75px);
+  width: 11.5px;
+  height: 6.9px;
   background: currentColor;
   clip-path: polygon(0 0, 50% 65%, 100% 0, 100% 35%, 50% 100%, 0 35%);
   opacity: 0;

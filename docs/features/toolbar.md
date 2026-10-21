@@ -8,7 +8,7 @@ The default toolbar attaches directly below the video with rounded lower corners
 
 The speed panel contains the text “Change Speed with Scroll” and an outlined chevron that slides the controls open. Reduced-motion preferences disable animation. Use this shared component for future tool panels instead of adding per-feature positioning logic.
 
-Hover and focus do not open panels. Feature icons show an absolutely positioned compact downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options ellipsis has no hover arrow. Hover does not change button or menu-row colors. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
+Hover and focus do not open panels. Feature icons show an absolutely positioned compact 11.5 × 6.9 px downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options ellipsis has no hover arrow. Hover does not change button or menu-row colors. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
 
 ## Settings and position
 

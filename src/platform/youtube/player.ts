@@ -28,10 +28,22 @@ export function createPlayer(doc: Document): PlayerPort & { dispose(): void } {
     // The last native icon may be pause, volume, etc.; show only the speed text.
     bezel.style.display = "none";
     layer.classList.remove("ytp-bezel-text-hide");
-    layer.style.display = "";
-    const timer = setTimeout(() => clearNotice?.(), 650);
-    clearNotice = () => {
+    layer.style.display = "block";
+    // YouTube's earlier bezel timeout can still hide this shared layer. Keep
+    // our notice visible until 650 ms after the latest interaction instead.
+    const visibility = new MutationObserver(() => {
+      if (text.textContent !== label || bezel.style.display !== "none") return;
+      if (layer.style.display !== "block") layer.style.display = "block";
+      if (layer.classList.contains("ytp-bezel-text-hide"))
+        layer.classList.remove("ytp-bezel-text-hide");
+    });
+    visibility.observe(layer, {
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+    const clear = () => {
       clearTimeout(timer);
+      visibility.disconnect();
       // A native action may have taken ownership of the same notification.
       if (text.textContent === label && bezel.style.display === "none") {
         text.textContent = previousText;
@@ -42,6 +54,8 @@ export function createPlayer(doc: Document): PlayerPort & { dispose(): void } {
         bezel.style.display = previousBezelDisplay;
       clearNotice = undefined;
     };
+    const timer = setTimeout(clear, 650);
+    clearNotice = clear;
   };
   const dismissNotice = () => clearNotice?.();
   const listeners = new Set<(state: PlayerSnapshot) => void>();
@@ -75,10 +89,13 @@ export function createPlayer(doc: Document): PlayerPort & { dispose(): void } {
     setPlaybackRate(rate) {
       refresh();
       if (!Number.isFinite(rate) || rate < 0.25 || rate > 2) return;
-      if (video && video.playbackRate !== rate) {
-        video.playbackRate = rate;
+      if (video) {
+        if (video.playbackRate !== rate) {
+          video.playbackRate = rate;
+          emit();
+        }
+        // Also renew feedback at a speed boundary, where the rate is unchanged.
         showSpeedNotice(video.playbackRate);
-        emit();
       }
     },
     subscribe(listener) {

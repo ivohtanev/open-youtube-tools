@@ -1,9 +1,12 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createPlayer } from "../../platform/youtube/player";
 import { mountToolbar } from "../../toolbar/mount";
 import { playbackSpeed, stepSpeed } from "./index";
 
-afterEach(() => document.body.replaceChildren());
+afterEach(() => {
+  vi.useRealTimers();
+  document.body.replaceChildren();
+});
 
 it("snaps off-grid speeds in the requested direction", () => {
   expect(stepSpeed(1.05, 1)).toBe(1.25);
@@ -158,4 +161,55 @@ it("uses 0.02 wheel steps in both directions and keeps zoom and boundaries", () 
   expect(player.snapshot().playbackRate).toBe(0.25);
   dispose();
   player.dispose();
+});
+
+it("keeps the native notice visible for every wheel tick despite an earlier YouTube hide timer", async () => {
+  vi.useFakeTimers();
+  history.replaceState(null, "", "/watch?v=test");
+  document.body.innerHTML =
+    '<div id="movie_player"><video class="html5-main-video"></video><div style="display:none"><div class="ytp-bezel-text-wrapper"><div class="ytp-bezel-text"></div></div><div class="ytp-bezel"></div></div></div>';
+  const player = createPlayer(document);
+  const dispose = mountToolbar(document.body, player, [playbackSpeed]);
+  const trigger = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Change Speed with Scroll"]',
+  )!;
+  const text = document.querySelector<HTMLElement>(".ytp-bezel-text")!;
+  const layer = text.parentElement!.parentElement!;
+  const tick = () =>
+    trigger.dispatchEvent(
+      new WheelEvent("wheel", { deltaY: -1, cancelable: true }),
+    );
+  try {
+    setTimeout(() => {
+      layer.style.display = "none";
+      layer.classList.add("ytp-bezel-text-hide");
+    }, 500);
+    for (let i = 1; i <= 6; i++) {
+      tick();
+      expect(player.snapshot().playbackRate).toBe(1 + i * 0.02);
+      expect(text.textContent).toBe(player.snapshot().playbackRate + "x");
+      await vi.advanceTimersByTimeAsync(400);
+      expect(layer.style.display).toBe("block");
+      expect(layer.classList.contains("ytp-bezel-text-hide")).toBe(false);
+    }
+    await vi.advanceTimersByTimeAsync(249);
+    expect(layer.style.display).toBe("block");
+    await vi.advanceTimersByTimeAsync(1);
+    expect(layer.style.display).toBe("none");
+    player.setPlaybackRate(2);
+    await vi.advanceTimersByTimeAsync(400);
+    tick();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(player.snapshot().playbackRate).toBe(2);
+    expect(text.textContent).toBe("2x");
+    expect(layer.style.display).toBe("block");
+    await vi.advanceTimersByTimeAsync(250);
+    expect(layer.style.display).toBe("none");
+    layer.style.display = "none";
+    await Promise.resolve();
+    expect(layer.style.display).toBe("none");
+  } finally {
+    dispose();
+    player.dispose();
+  }
 });
