@@ -2,7 +2,9 @@
 
 ## Implemented foundation
 
-Open YouTube Tools is a Manifest V3 content-script extension for desktop Chromium browsers. The toolbar attaches to the video by default, offers viewport-bottom docking and provides expandable playback speed controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code, account integration, or background worker. Extension-local storage saves toolbar position and disabled functions.
+Open YouTube Tools is a Manifest V3 extension for desktop Chromium browsers. The toolbar attaches to the video by default, offers viewport-bottom docking and provides modular controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code or account integration. Extension-local storage saves toolbar position and disabled functions. A small background worker uses the downloads permission to open Save As for screenshots; it accepts only validated PNG data URLs and safe filenames from YouTube content scripts.
+
+Cinema uses an injected mounting capability (`MountCinema`) to manage a pointer-transparent SVG dimmer with clear windows over the player and toolbar, avoiding changes to YouTube stacking contexts. Screenshot receives an injected capture/save action; the YouTube adapter captures the frame, and the entry point sends it to the download worker. See [the local screenshot download decision](decisions/0002-screenshot-downloads.md).
 
 ```text
 src/

@@ -5,6 +5,10 @@ import { positionToolbar } from "../platform/youtube/toolbar-layout";
 import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
 import { expandPlayer } from "../features/expand-player";
+import { cinema } from "../features/cinema";
+import { screenshot } from "../features/screenshot";
+import { createCinema } from "../platform/youtube/cinema";
+import { captureScreenshot } from "../platform/youtube/screenshot";
 import { createExpandPlayer } from "../platform/youtube/expand-player";
 import { createMiniPlayer } from "../platform/youtube/mini-player";
 import { mountMiniPlayer } from "../features/mini-player";
@@ -47,7 +51,25 @@ export default defineContentScript({
         mountToolbar(
           container,
           player,
-          [playbackSpeed, expandPlayer(expandedPlayer)],
+          [
+            playbackSpeed,
+            expandPlayer(expandedPlayer),
+            cinema((toolbar, onChange) =>
+              createCinema(document, toolbar, onChange),
+            ),
+            screenshot(async () => {
+              const image = captureScreenshot(document);
+              const result = await browser.runtime.sendMessage({
+                type: "save-video-screenshot",
+                ...image,
+              });
+              if (!result?.ok)
+                throw new Error(
+                  result?.error ??
+                    "Could not save screenshot. Please try again.",
+                );
+            }),
+          ],
           {
             miniPlayerEnabled: saved.miniPlayerEnabled !== false,
             onMiniPlayerEnabledChange: (miniPlayerEnabled) => {

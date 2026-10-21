@@ -26,6 +26,11 @@ export interface ExpandPlayerPort {
 
 export type ToolbarPosition = "player" | "bottom";
 
+export type MountCinema = (
+  toolbar: HTMLElement,
+  onChange: (active: boolean) => void,
+) => { toggle(): void; dispose(): void };
+
 export interface ToolbarLayout {
   setPosition(position: ToolbarPosition): void;
   dispose(): void;
