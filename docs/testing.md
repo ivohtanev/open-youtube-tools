@@ -4,7 +4,11 @@
 
 Run `npm run check`. TypeScript checks the contracts, Vitest/jsdom checks behavior and disposal, Prettier checks formatting, and WXT verifies extension packaging. CI runs the same command on Node 24. Tests use local fixtures and do not contact YouTube.
 
-## Owner acceptance — 2026-10-21
+## Cinema and screenshot — 2026-10-21
+
+Automated tests cover cinema mask opacity/geometry, fullscreen and mini-player tracking, Escape/navigation/disposal, PNG capture at intrinsic video dimensions, unavailable and restricted frames, Save As requests, request validation and cancellation/errors. Live YouTube and native Save As checks remain pending; reload the unpacked extension to register the new downloads permission and worker. Follow the acceptance cases in [cinema](features/cinema.md) and [screenshot](features/screenshot.md).
+
+## Owner acceptance — 2026-10-21 (previous features)
 
 Before work on expand/shrink, Ivo confirmed that all existing features through merged PR #5 were tested and approved. This supersedes the earlier general pending status for those features; no individual additional matrix results or browser version were provided. Expand/shrink was added afterward and needs its own acceptance.
 

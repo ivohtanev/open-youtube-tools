@@ -14,7 +14,7 @@ let nextId = 0;
 export function createPopover(
   trigger: HTMLButtonElement,
   panel: HTMLElement,
-  options: { placement?: () => Placement } = {},
+  options: { placement?: () => Placement; triggerOnClick?: boolean } = {},
 ) {
   panel.id = `oyt-panel-${++nextId}`;
   panel.classList.add("popover");
@@ -118,9 +118,10 @@ export function createPopover(
       if (!panel.contains(active) && active !== trigger) close();
     }, 180);
   };
-  trigger.addEventListener("click", () => (panel.hidden ? open() : close()), {
-    signal,
-  });
+  if (options.triggerOnClick !== false)
+    trigger.addEventListener("click", () => (panel.hidden ? open() : close()), {
+      signal,
+    });
   trigger.addEventListener(
     "keydown",
     (event) => {

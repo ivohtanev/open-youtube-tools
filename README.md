@@ -25,6 +25,14 @@ Click the expand icon to make the existing player span the available page width,
 
 While expanded, the secondary column is placed after the primary content and known side-rail containers are released from fixed positioning. Scoped styles handle the standard watch layout without changing YouTube experiment flags. Experimental-layout fixes are deferred. Fullscreen and picture in picture temporarily suspend the expanded layout. Navigation to another video and disabling the tool restore the native layout. Expand state is not saved. Experimental-layout compatibility still requires live testing with the Brave custom filters disabled. See [expand player](docs/features/expand-player.md).
 
+### Cinema mode
+
+Click the film icon to dim the page by 70%, keeping the player and toolbar clear. Click again or press Escape to turn it off. The clear areas follow scrolling, resizing, mini player and fullscreen. Navigation and hiding the tool turn it off; its state is not saved. See [cinema mode](docs/features/cinema.md).
+
+### Screenshot
+
+Click the camera icon to capture the current video frame as a PNG at the video's original resolution and open the browser's Save As dialog. The suggested filename includes the video ID and playback time. The capture excludes controls, captions and page overlays. The downloads permission enables this dialog; screenshots are processed locally. Protected or restricted video may prevent capture, in which case the tool shows an error. See [screenshot](docs/features/screenshot.md).
+
 ### Scroll mini player
 
 Enabled by default. Scroll the main player above the masthead to keep its existing picture in the top-left corner, at 25% of the viewport width in a black 16:9 frame. Scroll back to restore it. Time, speed, volume and playback state continue on the same video.
