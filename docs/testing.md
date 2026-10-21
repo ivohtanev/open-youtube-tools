@@ -12,6 +12,8 @@ The implementation passed `npm run check` with 12 tests before this documentatio
 
 ## Manual acceptance matrix
 
+The second feature adds a [scroll mini player](features/mini-player.md). Its DOM tests and Brave canvas-stream fixture cover scroll restoration, one video, Play/Pause, progress, lifecycle and the iconless setting. The fixture measured 384 × 216px at (12, 12) in a 1536px viewport. Fixture preference restoration uses local storage, not extension storage. Packaged-extension/live YouTube validation remains pending; follow the feature's manual acceptance list before marking ready.
+
 Record browser version, date, page type/layout, result and any console errors in the PR. Use the following matrix for detailed compatibility passes. Owner acceptance is recorded above; individual case outcomes have not been recorded, so do not infer case-by-case coverage from that report:
 
 | Case                                    | Expected result                                                  |

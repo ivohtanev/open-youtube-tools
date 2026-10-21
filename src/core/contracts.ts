@@ -22,3 +22,15 @@ export interface ToolbarLayout {
   setPosition(position: ToolbarPosition): void;
   dispose(): void;
 }
+
+export interface MiniPlayerSnapshot {
+  active: boolean;
+  paused: boolean;
+  progress: number;
+}
+
+export interface MiniPlayerPort {
+  setEnabled(enabled: boolean): void;
+  togglePlayback(): void;
+  subscribe(listener: (state: MiniPlayerSnapshot) => void): () => void;
+}

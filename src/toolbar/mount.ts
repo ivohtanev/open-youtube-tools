@@ -16,6 +16,8 @@ export function mountToolbar(
     hiddenTools?: string[];
     onHiddenToolsChange?: (ids: string[]) => void;
     onPositionChange?: (position: ToolbarPosition) => void;
+    miniPlayerEnabled?: boolean;
+    onMiniPlayerEnabledChange?: (enabled: boolean) => void;
   } = {},
 ) {
   const toolbar = document.createElement("section");
@@ -95,13 +97,36 @@ export function mountToolbar(
     };
     functionsPanel.append(row);
   }
-  menu.append(layoutTrigger, layoutPanel, functionsTrigger, functionsPanel);
+  const playbackTrigger = document.createElement("button");
+  playbackTrigger.textContent = "Player Playback ›";
+  playbackTrigger.setAttribute("aria-label", "Player Playback");
+  const playbackPanel = document.createElement("div");
+  const miniPlayerRow = document.createElement("label");
+  miniPlayerRow.className = "function-option";
+  const miniPlayerCheckbox = document.createElement("input");
+  miniPlayerCheckbox.type = "checkbox";
+  miniPlayerCheckbox.checked = options.miniPlayerEnabled !== false;
+  miniPlayerCheckbox.onchange = () =>
+    options.onMiniPlayerEnabledChange?.(miniPlayerCheckbox.checked);
+  miniPlayerRow.append(miniPlayerCheckbox, "Mini player");
+  playbackPanel.append(miniPlayerRow);
+  menu.append(
+    layoutTrigger,
+    layoutPanel,
+    functionsTrigger,
+    functionsPanel,
+    playbackTrigger,
+    playbackPanel,
+  );
   toolbar.append(settings, menu);
   const settingsPopover = createPopover(settings, menu);
   const layoutPopover = createPopover(layoutTrigger, layoutPanel, {
     placement: () => "right-start",
   });
   const functionsPopover = createPopover(functionsTrigger, functionsPanel, {
+    placement: () => "right-start",
+  });
+  const playbackPopover = createPopover(playbackTrigger, playbackPanel, {
     placement: () => "right-start",
   });
   const controller = options.createLayout?.(toolbar);
@@ -118,6 +143,7 @@ export function mountToolbar(
   const unsubscribe = player.subscribe(({ available }) => {
     toolbar.hidden = !available;
     if (!available) {
+      playbackPopover.close();
       functionsPopover.close();
       layoutPopover.close();
       settingsPopover.close();
@@ -126,6 +152,7 @@ export function mountToolbar(
   return () => {
     unsubscribe();
     controller?.dispose();
+    playbackPopover.dispose();
     functionsPopover.dispose();
     layoutPopover.dispose();
     settingsPopover.dispose();
