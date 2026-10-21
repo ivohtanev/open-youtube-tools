@@ -4,9 +4,15 @@
 
 Run `npm run check`. TypeScript checks the contracts, Vitest/jsdom checks behavior and disposal, Prettier checks formatting, and WXT verifies extension packaging. CI runs the same command on Node 24. Tests use local fixtures and do not contact YouTube.
 
+## Owner acceptance — 2026-10-21
+
+Ivo reported testing the current extension in Brave on live YouTube and accepted the toolbar, animations and speed indicator after the CSS fade fix (`f245311`). This is owner-reported manual acceptance of the current behavior, including the previously reported indicator issue; it is not a GitHub approving review or merge authorization. Browser version, individual compatibility-matrix outcomes and console logs were not supplied.
+
+The implementation passed `npm run check` with 12 tests before this documentation update. Further features are deferred to a later session. Preserve the accepted interaction behavior when adding them.
+
 ## Manual acceptance matrix
 
-Record browser version, date, page type/layout, result and any console errors in the PR. The following cases are **not yet verified on live YouTube** by this implementation:
+Record browser version, date, page type/layout, result and any console errors in the PR. Use the following matrix for detailed compatibility passes. Owner acceptance is recorded above; individual case outcomes have not been recorded, so do not infer case-by-case coverage from that report:
 
 | Case                                    | Expected result                                                  |
 | --------------------------------------- | ---------------------------------------------------------------- |
