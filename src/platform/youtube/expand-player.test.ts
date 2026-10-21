@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createExpandPlayer } from "./expand-player";
 import { expandPlayer } from "../../features/expand-player";
+import { createPlayer } from "./player";
+import { mountToolbar } from "../../toolbar/mount";
 
 describe("expanded watch player", () => {
   let port: ReturnType<typeof createExpandPlayer>;
@@ -108,6 +110,94 @@ describe("expanded watch player", () => {
     });
     document.dispatchEvent(new Event("yt-navigate-finish"));
     expect(watch.hasAttribute("data-oyt-expanded")).toBe(true);
+  });
+  it.each([false, true])(
+    "hands expansion back to native mode when theater was %s",
+    async (initialTheater) => {
+      vi.useFakeTimers();
+      watch.toggleAttribute("theater", initialTheater);
+      port.toggle();
+      // A native mutation queued before entering expand must not cancel it.
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(40);
+      expect(watch.hasAttribute("data-oyt-expanded")).toBe(true);
+      const states: boolean[] = [];
+      const unsubscribe = port.subscribe((state) =>
+        states.push(state.expanded),
+      );
+      watch.toggleAttribute("theater", !initialTheater);
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(40);
+      expect(watch.hasAttribute("data-oyt-expanded")).toBe(false);
+      expect(watch.hasAttribute("theater")).toBe(!initialTheater);
+      expect(states.at(-1)).toBe(false);
+      port.toggle();
+      expect(watch.hasAttribute("data-oyt-expanded")).toBe(true);
+      unsubscribe();
+      vi.useRealTimers();
+    },
+  );
+  it("leaves expand active when T does not change the native mode", async () => {
+    vi.useFakeTimers();
+    port.toggle();
+    const input = document.createElement("input");
+    document.body.append(input);
+    const key = new KeyboardEvent("keydown", {
+      key: "t",
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(key);
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(40);
+    expect(key.defaultPrevented).toBe(false);
+    expect(watch.hasAttribute("data-oyt-expanded")).toBe(true);
+    vi.useRealTimers();
+  });
+  it("lets native T handling switch modes while the expand button holds shadow focus", async () => {
+    vi.useFakeTimers();
+    const host = document.createElement("div");
+    const container = document.createElement("div");
+    host.attachShadow({ mode: "open" }).append(container);
+    document.body.append(host);
+    const player = createPlayer(document);
+    const unmount = mountToolbar(container, player, [expandPlayer(port)]);
+    const trigger = container.querySelector<HTMLButtonElement>(
+      '[aria-label="Expand video"]',
+    )!;
+    const nativeKeydown = (event: KeyboardEvent) => {
+      if (event.key === "t") watch.toggleAttribute("theater");
+    };
+    const nativeKeyup = vi.fn();
+    document.addEventListener("keydown", nativeKeydown);
+    document.addEventListener("keyup", nativeKeyup);
+    try {
+      trigger.click();
+      trigger.focus();
+      expect(host.shadowRoot!.activeElement).toBe(trigger);
+      trigger.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "t",
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      trigger.dispatchEvent(
+        new KeyboardEvent("keyup", { key: "t", bubbles: true, composed: true }),
+      );
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(40);
+      expect(watch.hasAttribute("theater")).toBe(true);
+      expect(watch.hasAttribute("data-oyt-expanded")).toBe(false);
+      expect(trigger.getAttribute("aria-pressed")).toBe("false");
+      expect(nativeKeyup).toHaveBeenCalledOnce();
+    } finally {
+      document.removeEventListener("keydown", nativeKeydown);
+      document.removeEventListener("keyup", nativeKeyup);
+      unmount();
+      player.dispose();
+      vi.useRealTimers();
+    }
   });
   it("exposes an accessible toggle and restores layout when the tool is hidden", () => {
     const container = document.createElement("div");

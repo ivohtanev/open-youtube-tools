@@ -10,6 +10,7 @@ export function createExpandPlayer(
   let disposed = false;
   let frame = 0;
   let watch: HTMLElement | null = null;
+  let theater = false;
   let video: HTMLVideoElement | null = null;
   let observedHeader: HTMLElement | null = null;
   let previousState = "";
@@ -98,6 +99,13 @@ export function createExpandPlayer(
     if (disposed) return;
     const next = findVideo(doc);
     const nextWatch = next?.closest<HTMLElement>("ytd-watch-flexy") ?? null;
+    const nextTheater = nextWatch?.hasAttribute("theater") ?? false;
+    // Observe YouTube's actual mode, so both its shortcut and native button
+    // hand control back without intercepting keys or changing native state.
+    const nativeModeHandoff =
+      expanded && nextWatch === watch && nextTheater !== theater;
+    if (nativeModeHandoff) expanded = false;
+    theater = nextTheater;
     if (watch !== nextWatch) {
       clear();
       watch = nextWatch;
@@ -139,6 +147,7 @@ export function createExpandPlayer(
       }
     }
     emit();
+    if (nativeModeHandoff) win.dispatchEvent(new Event("resize"));
   }
   function schedule() {
     if (!frame && !disposed) frame = win.requestAnimationFrame(update);
