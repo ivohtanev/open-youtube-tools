@@ -1,7 +1,10 @@
 node_modules/
+.wxt/
+.output/
+coverage/
+*.local
 dist/
 build/
-coverage/
 *.log
 .env
 .env.*
