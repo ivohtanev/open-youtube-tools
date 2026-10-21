@@ -18,7 +18,7 @@ The ellipsis opens a settings panel with a nested Position category. “Attached
 
 During fullscreen the host moves inside the fullscreen element, centers at its bottom edge, and uses an 80% opaque background. YouTube's `ytp-autohide` class hides the whole toolbar and makes it inert. Leaving fullscreen restores the selected position. Fullscreen is a temporary layout override, not a saved preference change.
 
-During expand mode the toolbar overlays the player's top-right edge with an 80% opaque background and reserves no layout height. The player fills all viewport height below the retained YouTube masthead. This temporary placement keeps shrink accessible and leaves native bottom controls clear. Shrink restores the selected docking position without changing the saved preference.
+During expand mode the player-docked toolbar centers immediately below the player, with its usual 44px of document-flow space. The player still fills all viewport height below the retained YouTube masthead; the toolbar does not reduce picture height and can be reached by scrolling slightly. Native controls remain inside the player. Shrink restores normal alignment; saved bottom docking remains unchanged.
 
 ## Validation boundary
 

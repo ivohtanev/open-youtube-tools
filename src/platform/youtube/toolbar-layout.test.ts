@@ -45,19 +45,23 @@ it("docks to the player, centers theater, persists selection through fullscreen 
   layout.setPosition("player");
   expect(toolbar.dataset.placement).toBe("player");
   expect(toolbar.inert).toBe(false);
+  document.querySelector("ytd-watch-flexy")!.removeAttribute("theater");
   document
     .querySelector("ytd-watch-flexy")!
     .setAttribute("data-oyt-expanded", "");
   layout.setPosition("player");
-  expect(toolbar.style.top).toBe("0px");
-  expect(toolbar.style.right).toBe("12px");
-  expect(toolbar.style.left).toBe("auto");
-  expect(host.style.getPropertyValue("--oyt-host-height")).toBe("0px");
+  expect(toolbar.style.top).toBe("500px");
+  expect(toolbar.style.right).toBe("auto");
+  expect(toolbar.style.left).toBe("500px");
+  expect(toolbar.style.transform).toBe("translateX(-50%)");
+  expect(host.style.getPropertyValue("--oyt-host-height")).toBe("44px");
   document
     .querySelector("ytd-watch-flexy")!
     .removeAttribute("data-oyt-expanded");
   layout.setPosition("player");
   expect(toolbar.style.top).toBe("500px");
   expect(toolbar.style.right).toBe("auto");
+  expect(toolbar.style.left).toBe("100px");
+  expect(toolbar.style.transform).toBe("none");
   layout.dispose();
 });

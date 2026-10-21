@@ -42,46 +42,30 @@ export function positionToolbar(
     host.style.setProperty("display", "block", "important");
     host.style.setProperty(
       "--oyt-host-height",
-      position === "player" &&
-        !fullscreenPlayer &&
-        !expanded &&
-        !!anchor &&
-        !toolbar.hidden
+      position === "player" && !fullscreenPlayer && !!anchor && !toolbar.hidden
         ? "44px"
         : "0px",
       "important",
     );
-    const expandedOverlay = expanded && !fullscreenPlayer;
-    const bottom =
-      (!expandedOverlay && position === "bottom") || fullscreenPlayer;
+    const bottom = position === "bottom" || fullscreenPlayer;
     toolbar.dataset.placement = bottom ? "bottom" : "player";
     toolbar.dataset.fullscreen = String(fullscreenPlayer);
-    toolbar.dataset.expanded = String(expandedOverlay);
     const hiddenControls =
       fullscreenPlayer && !!movie?.classList.contains("ytp-autohide");
     toolbar.dataset.controlsHidden = String(hiddenControls);
     toolbar.inert = hiddenControls;
     const rect = movie?.getBoundingClientRect();
     Object.assign(toolbar.style, {
-      top: expandedOverlay
-        ? `${Math.max(0, rect?.top ?? 0)}px`
-        : bottom
-          ? "auto"
-          : `${rect?.bottom ?? 0}px`,
+      top: bottom ? "auto" : `${rect?.bottom ?? 0}px`,
       bottom: bottom ? "0px" : "auto",
-      right: expandedOverlay ? "12px" : "auto",
-      left: expandedOverlay
-        ? "auto"
-        : bottom || theater
-          ? `${fullscreenPlayer && rect ? rect.left + rect.width / 2 : theater && !bottom && rect ? rect.left + rect.width / 2 : innerWidth / 2}px`
+      right: "auto",
+      left:
+        bottom || theater || expanded
+          ? `${fullscreenPlayer && rect ? rect.left + rect.width / 2 : (theater || expanded) && !bottom && rect ? rect.left + rect.width / 2 : innerWidth / 2}px`
           : `${Math.max(0, rect?.left ?? 0)}px`,
-      transform:
-        !expandedOverlay && (bottom || theater) ? "translateX(-50%)" : "none",
+      transform: bottom || theater || expanded ? "translateX(-50%)" : "none",
       visibility:
-        !bottom &&
-        (!rect ||
-          rect.bottom < 0 ||
-          (!expandedOverlay && rect.bottom > innerHeight))
+        !bottom && (!rect || rect.bottom < 0 || rect.bottom > innerHeight)
           ? "hidden"
           : "",
     });
