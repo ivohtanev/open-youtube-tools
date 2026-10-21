@@ -33,9 +33,9 @@ it("supports scroll, disclosure, boundaries, reset, route visibility and teardow
   const wheel = new WheelEvent("wheel", { deltaY: -100, cancelable: true });
   trigger.dispatchEvent(wheel);
   expect(wheel.defaultPrevented).toBe(true);
-  expect(player.snapshot().playbackRate).toBe(1.3);
+  expect(player.snapshot().playbackRate).toBe(1.02);
   faster.click();
-  expect(player.snapshot().playbackRate).toBe(1.5);
+  expect(player.snapshot().playbackRate).toBe(1.25);
   trigger.dispatchEvent(new WheelEvent("wheel", { deltaY: 1 }));
   slower.click();
   expect(player.snapshot().playbackRate).toBe(1);
@@ -43,10 +43,10 @@ it("supports scroll, disclosure, boundaries, reset, route visibility and teardow
   expect(
     container.querySelector(".reveal")!.classList.contains("expanded"),
   ).toBe(true);
-  for (let i = 0; i < 10; i++) faster.click();
+  for (let i = 0; i < 100; i++) faster.click();
   expect(player.snapshot().playbackRate).toBe(2);
   expect(faster.disabled).toBe(true);
-  for (let i = 0; i < 10; i++) slower.click();
+  for (let i = 0; i < 100; i++) slower.click();
   expect(player.snapshot().playbackRate).toBe(0.25);
   expect(slower.disabled).toBe(true);
   reset.click();
@@ -126,13 +126,13 @@ it("restores disabled functions and mounts/unmounts them through checkboxes", ()
   expect(old.getAttribute("aria-expanded")).toBe("false");
   checkbox.click();
   speed()!.dispatchEvent(new WheelEvent("wheel", { deltaY: -1 }));
-  expect(player.snapshot().playbackRate).toBe(1.3);
+  expect(player.snapshot().playbackRate).toBe(1.02);
   expect(saved).toEqual([[], ["playback-speed"], []]);
   dispose();
   player.dispose();
 });
 
-it("uses 0.3 wheel steps in both directions and keeps zoom and boundaries", () => {
+it("uses 0.02 wheel steps in both directions and keeps zoom and boundaries", () => {
   history.replaceState(null, "", "/watch?v=test");
   document.body.innerHTML =
     '<div id="movie_player"><video class="html5-main-video"></video></div>';
@@ -146,15 +146,15 @@ it("uses 0.3 wheel steps in both directions and keeps zoom and boundaries", () =
       new WheelEvent("wheel", { deltaY, ctrlKey, cancelable: true }),
     );
   wheel(-1);
-  expect(player.snapshot().playbackRate).toBe(1.3);
+  expect(player.snapshot().playbackRate).toBe(1.02);
   wheel(1);
   expect(player.snapshot().playbackRate).toBe(1);
   wheel(-1, true);
   wheel(0);
   expect(player.snapshot().playbackRate).toBe(1);
-  for (let i = 0; i < 10; i++) wheel(-1);
+  for (let i = 0; i < 100; i++) wheel(-1);
   expect(player.snapshot().playbackRate).toBe(2);
-  for (let i = 0; i < 10; i++) wheel(1);
+  for (let i = 0; i < 100; i++) wheel(1);
   expect(player.snapshot().playbackRate).toBe(0.25);
   dispose();
   player.dispose();

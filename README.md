@@ -24,7 +24,7 @@ npm ci
 npm run check
 ```
 
-Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Scroll over the speed icon in 0.3 steps. Click and expand its panel for preset − / + buttons and reset. Use ⋮ → Position to choose video or screen-bottom docking. For development, run `npm run dev`.
+Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Scroll over the speed icon in 0.02 steps. Click and expand its panel for preset − / + buttons and reset. Use ⋮ → Position to choose video or screen-bottom docking. For development, run `npm run dev`.
 
 See [local development](docs/guides/local-development.md) for setup and commands.
 

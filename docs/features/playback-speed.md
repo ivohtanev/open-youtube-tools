@@ -2,7 +2,7 @@
 
 The toolbar exposes a speedometer icon. Clicking shows “Change Speed with Scroll”; the outlined chevron expands the −, current-rate/reset and + buttons with a slide animation. Clicking the icon again closes the panel. Keyboard users can use Tab, Enter, Space, ArrowDown and Escape.
 
-Scrolling up over the icon increases speed by 0.3; scrolling down decreases it by 0.3. Wheel events outside the icon are unaffected. Ctrl-wheel retains browser zoom behavior. Rates are rounded to two decimal places and clamped to 0.25–2×. Each nonzero vertical wheel event is one step, including trackpad events.
+Scrolling up over the icon increases speed by 0.02; scrolling down decreases it by 0.02. Wheel events outside the icon are unaffected. Ctrl-wheel retains browser zoom behavior. Rates are rounded to two decimal places and clamped to 0.25–2×. Each nonzero vertical wheel event is one step, including trackpad events.
 
 Buttons move to the next strictly greater or smaller 0.25 preset, rather than adding an offset to a custom rate: 1.05 → 1.25 with + and 1.05 → 1.00 with −. Clicking the displayed rate resets to 1.00×. Boundary buttons disable; native YouTube rate changes update the controls and an accessible status region. A modified rate highlights the icon.
 

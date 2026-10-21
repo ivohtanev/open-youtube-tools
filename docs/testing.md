@@ -24,4 +24,4 @@ Record browser version, date, page type/layout, result and any console errors in
 
 Do not mark a layout as supported based on jsdom results. Fix selectors centrally and add a regression fixture where possible. Add browser automation when it can validate extension injection and navigation reliably; do not replace the manual compatibility evidence with a screenshot of a synthetic page.
 
-Additional toolbar checks: scroll by 0.3, 1.05 snaps to 1.25/1.00, disclosure animation, nested Position menu, position restored after reload, panels flip near viewport edges, Escape/outside-click dismissal and reduced-motion preference.
+Additional toolbar checks: scroll by 0.02, 1.05 snaps to 1.25/1.00, disclosure animation, nested Position menu, position restored after reload, panels flip near viewport edges, Escape/outside-click dismissal and reduced-motion preference.

@@ -45,7 +45,6 @@ button {
   font: inherit;
   cursor: pointer;
 }
-button:hover:not(:disabled),
 button[aria-pressed="true"] {
   background: #ffffff18;
 }
@@ -185,29 +184,29 @@ button:disabled {
   border-bottom: 1px solid #484848;
   border-left: 1px solid #484848;
 }
-.icon-button[aria-haspopup] {
+.tool .icon-button[aria-haspopup] {
   position: relative;
 }
-.icon-button[aria-haspopup]::after {
+.tool .icon-button[aria-haspopup]::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  left: calc(50% - 3px);
-  width: 6px;
+  top: calc(100% + 13px);
+  left: calc(50% - 5px);
+  width: 10px;
   height: 6px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
+  background: currentColor;
+  clip-path: polygon(0 0, 50% 65%, 100% 0, 100% 35%, 50% 100%, 0 35%);
   opacity: 0;
-  transform: translateY(-5px) rotate(45deg);
+  transform: translateY(-5px);
   transition:
     opacity 120ms ease-out,
     transform 120ms ease-out;
   pointer-events: none;
 }
-.icon-button[aria-haspopup]:hover:not(:disabled)::after,
-.icon-button[aria-haspopup]:focus-visible::after {
+.tool .icon-button[aria-haspopup]:hover:not(:disabled)::after,
+.tool .icon-button[aria-haspopup]:focus-visible::after {
   opacity: 0.8;
-  transform: translateY(0) rotate(45deg);
+  transform: translateY(0);
 }
 .function-option {
   display: flex;
@@ -215,9 +214,6 @@ button:disabled {
   gap: 10px;
   padding: 6px 10px;
   cursor: pointer;
-}
-.function-option:hover {
-  background: #ffffff18;
 }
 .function-option svg {
   width: 20px;

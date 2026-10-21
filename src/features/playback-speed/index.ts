@@ -71,7 +71,8 @@ export const playbackSpeed: Tool = {
             2,
             Math.max(
               0.25,
-              Math.round((rate + (event.deltaY < 0 ? 0.3 : -0.3)) * 100) / 100,
+              Math.round((rate + (event.deltaY < 0 ? 0.02 : -0.02)) * 100) /
+                100,
             ),
           ),
         );

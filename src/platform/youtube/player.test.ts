@@ -66,14 +66,14 @@ describe("YouTube player lifecycle", () => {
     const text = document.querySelector<HTMLElement>(".ytp-bezel-text")!;
     const layer = text.parentElement!.parentElement!;
     const bezel = document.querySelector<HTMLElement>(".ytp-bezel")!;
-    player.setPlaybackRate(1.3);
-    expect(text.textContent).toBe("1.3x");
+    player.setPlaybackRate(1.02);
+    expect(text.textContent).toBe("1.02x");
     expect(layer.style.display).toBe("");
     expect(bezel.style.display).toBe("none");
     vi.advanceTimersByTime(400);
-    player.setPlaybackRate(1.6);
+    player.setPlaybackRate(1.04);
     vi.advanceTimersByTime(400);
-    expect(text.textContent).toBe("1.6x");
+    expect(text.textContent).toBe("1.04x");
     expect(layer.style.display).toBe("");
     vi.advanceTimersByTime(250);
     expect(layer.style.display).toBe("none");
@@ -82,7 +82,7 @@ describe("YouTube player lifecycle", () => {
     player.setPlaybackRate(1);
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
     expect(layer.style.display).toBe("none");
-    player.setPlaybackRate(1.3);
+    player.setPlaybackRate(1.02);
     text.textContent = "native action";
     vi.advanceTimersByTime(650);
     expect(text.textContent).toBe("native action");
