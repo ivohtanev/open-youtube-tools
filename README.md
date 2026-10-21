@@ -45,7 +45,7 @@ Inspired by the useful controls in [Enhancer for YouTube™](https://chromewebst
 
 ## Contributing
 
-The project is at an early planning stage. Feature proposals, compatibility reports, and contributions are welcome. Development and installation instructions will follow with the first working extension.
+The project is at an early planning stage. Feature proposals, compatibility reports, and contributions are welcome. See [the development workflow](docs/development-workflow.md) for contribution and task management guidance. Development and installation instructions will follow with the first working extension.
 
 ## License
 
