@@ -9,6 +9,7 @@ export function createCinema(
   const win = doc.defaultView!;
   let active = false;
   let frame = 0;
+  let removal: ReturnType<typeof setTimeout> | undefined;
   const ns = "http://www.w3.org/2000/svg";
   const overlay = doc.createElementNS(ns, "svg");
   overlay.setAttribute("aria-hidden", "true");
@@ -18,12 +19,27 @@ export function createCinema(
   const maskId = `oyt-cinema-${crypto.randomUUID()}`;
   overlay.innerHTML = `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect fill="black"/><rect fill="black"/></mask></defs><rect width="100%" height="100%" fill="black" fill-opacity="0.7" mask="url(#${maskId})"/>`;
   const holes = overlay.querySelectorAll("mask rect[fill=black]");
-  function stop() {
+  const style = doc.createElementNS(ns, "style");
+  style.textContent = `
+    svg[data-oyt-cinema] { opacity: 0; transition: opacity 180ms ease; }
+    svg[data-oyt-cinema][data-active] { opacity: 1; }
+    @starting-style { svg[data-oyt-cinema][data-active] { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      svg[data-oyt-cinema] { transition: none; }
+    }
+  `;
+  overlay.append(style);
+  function stop(animate = false) {
     active = false;
     win.cancelAnimationFrame(frame);
-    overlay.remove();
+    clearTimeout(removal);
+    overlay.removeAttribute("data-active");
+    delete toolbar.dataset.cinema;
+    if (animate) removal = setTimeout(() => overlay.remove(), 180);
+    else overlay.remove();
     onChange(false);
   }
+  const reset = () => stop();
   function update() {
     if (!active) return;
     const video = findVideo(doc);
@@ -52,16 +68,19 @@ export function createCinema(
     if (event.key === "Escape") stop();
   };
   doc.addEventListener("keydown", onKey);
-  doc.addEventListener("yt-navigate-start", stop);
-  doc.addEventListener("yt-navigate-finish", stop);
+  doc.addEventListener("yt-navigate-start", reset);
+  doc.addEventListener("yt-navigate-finish", reset);
   return {
     get active() {
       return active;
     },
     toggle() {
-      if (active) stop();
+      if (active) stop(true);
       else {
+        clearTimeout(removal);
         active = true;
+        overlay.setAttribute("data-active", "");
+        toolbar.dataset.cinema = "true";
         onChange(true);
         update();
       }
@@ -69,8 +88,8 @@ export function createCinema(
     dispose() {
       stop();
       doc.removeEventListener("keydown", onKey);
-      doc.removeEventListener("yt-navigate-start", stop);
-      doc.removeEventListener("yt-navigate-finish", stop);
+      doc.removeEventListener("yt-navigate-start", reset);
+      doc.removeEventListener("yt-navigate-finish", reset);
     },
   };
 }

@@ -6,7 +6,7 @@ Run `npm run check`. TypeScript checks the contracts, Vitest/jsdom checks behavi
 
 ## Cinema and screenshot — 2026-10-21
 
-Automated tests cover cinema mask opacity/geometry, fullscreen and mini-player tracking, Escape/navigation/disposal, PNG capture at intrinsic video dimensions, unavailable and restricted frames, Save As requests, request validation and cancellation/errors. Live YouTube and native Save As checks remain pending; reload the unpacked extension to register the new downloads permission and worker. Follow the acceptance cases in [cinema](features/cinema.md) and [screenshot](features/screenshot.md).
+Automated tests cover cinema mask opacity/geometry, fullscreen and mini-player tracking, Escape/navigation/disposal, PNG capture at intrinsic video dimensions, unavailable and restricted frames, Save As requests, request validation and cancellation/errors. Ivo confirmed on 2026-10-21 that screenshot saving works and the initial cinema behavior is good. The subsequent 180ms CSS transition and toolbar hover/focus brightness refinement passes the automated suite (53 tests), including rapid reactivation during fade-out; live acceptance of this refinement remains pending. For testing after changes, reload the unpacked extension to register the new downloads permission and worker. Follow the acceptance cases in [cinema](features/cinema.md) and [screenshot](features/screenshot.md).
 
 ## Owner acceptance — 2026-10-21 (previous features)
 

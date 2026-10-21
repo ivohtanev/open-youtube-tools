@@ -2,11 +2,11 @@
 
 ## Status
 
-Implemented with automated geometry and lifecycle coverage. Live YouTube validation is pending.
+The owner confirmed the initial cinema behavior on 2026-10-21. The transition and hover refinement has automated coverage; live validation of this refinement is pending.
 
 ## User behavior
 
-The film icon toggles a black overlay with 70% opacity. Clear windows preserve the player, including native controls, and the extension toolbar. Escape turns cinema off. The active icon uses the toolbar's accent color and pressed state.
+The film icon toggles a black overlay with 70% opacity. The player, including native controls, stays clear. The toolbar dims by 70% and returns to full brightness on hover or visible keyboard focus. CSS transitions fade cinema on/off and toolbar brightness over 180ms; reduced-motion preferences disable transitions. Escape turns cinema off. The active icon uses the toolbar's accent color and pressed state.
 
 ## Scope and non-goals
 
@@ -18,7 +18,7 @@ The feature uses the injected `MountCinema` capability. The YouTube adapter owns
 
 ## Lifecycle and failure behavior
 
-Navigation, loss of the video, disabling the tool and disposal remove the overlay and cancel updates. Missing video prevents activation. No native styles are modified.
+Navigation, loss of the video, disabling the tool and disposal immediately remove the overlay and cancel updates. Clicking the icon off allows a 180ms fade before removal; reactivation cancels pending removal. Missing video prevents activation. No native styles are modified.
 
 ## Tests and manual acceptance
 

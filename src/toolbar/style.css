@@ -17,6 +17,7 @@
   max-width: calc(100vw - 16px);
   border-radius: 0 0 22px 22px;
   background: #272727;
+  transition: filter 180ms ease;
   color: #eee;
   font:
     13px/1.4 system-ui,
@@ -24,6 +25,9 @@
 }
 .oyt-toolbar[data-placement="bottom"] {
   border-radius: 18px 18px 0 0;
+}
+.oyt-toolbar[data-cinema="true"]:not(:hover):not(:has(:focus-visible)) {
+  filter: brightness(0.3);
 }
 .oyt-toolbar[data-fullscreen="true"] {
   background: rgb(39 39 39 / 80%);

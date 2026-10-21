@@ -43,7 +43,31 @@ it("dims by 70% and cuts clear windows around the player and toolbar", () => {
   expect(holes[1]?.getAttribute("y")).toBe("410");
   expect(overlay.getAttribute("style")).toContain("pointer-events: none");
   cinema.toggle();
+  expect(
+    document.querySelector("[data-oyt-cinema]")?.hasAttribute("data-active"),
+  ).toBe(false);
+  cinema.dispose();
   expect(document.querySelector("[data-oyt-cinema]")).toBeNull();
+});
+it("marks the toolbar for CSS dimming and safely handles toggles during fade-out", () => {
+  vi.useFakeTimers();
+  try {
+    cinema.toggle();
+    expect(toolbar.dataset.cinema).toBe("true");
+    cinema.toggle();
+    expect(toolbar.dataset.cinema).toBeUndefined();
+    cinema.toggle();
+    vi.advanceTimersByTime(200);
+    expect(cinema.active).toBe(true);
+    expect(
+      document.querySelector("[data-oyt-cinema]")?.hasAttribute("data-active"),
+    ).toBe(true);
+    cinema.toggle();
+    vi.advanceTimersByTime(180);
+    expect(document.querySelector("[data-oyt-cinema]")).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 it("tracks fullscreen and mini player geometry without moving the video", () => {
   const parent = video.parentElement;
@@ -88,5 +112,6 @@ it.each([
   } else if (action === "dispose") cinema.dispose();
   else document.dispatchEvent(new Event(action));
   expect(cinema.active).toBe(false);
+  expect(toolbar.dataset.cinema).toBeUndefined();
   expect(document.querySelector("[data-oyt-cinema]")).toBeNull();
 });
