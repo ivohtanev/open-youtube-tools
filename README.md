@@ -4,7 +4,7 @@ An open-source browser extension for a more comfortable YouTube experience, with
 
 ## Status
 
-Project initialization. No installable extension or implemented features yet.
+Working Chromium Manifest V3 foundation with a bottom-docked toolbar and playback speed controls. Live YouTube compatibility validation is still pending; see the [testing matrix](docs/testing.md).
 
 ## Vision
 
@@ -15,29 +15,42 @@ Project initialization. No installable extension or implemented features yet.
 - Simple tools, such as playback speed controls, can operate directly on the video without unnecessary communication between features.
 - Compatibility with contemporary YouTube layouts, including A/B variants observed in October 2026, to be verified during implementation.
 
-## Planned architecture
+## Quick start
 
-The following is a proposed structure; implementation will be added incrementally.
+Requires Node.js 24+ and npm.
+
+```sh
+npm ci
+npm run check
+```
+
+Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Use − / + to adjust speed and click the current rate to reset to 1×. For development, run `npm run dev`.
+
+See [local development](docs/guides/local-development.md) for setup and commands.
+
+## Architecture
+
+The stack is strict TypeScript, WXT, native DOM with Shadow DOM style isolation, Vitest/jsdom and Prettier. See the [stack decision](docs/architecture/decisions/0001-extension-stack.md) for rationale.
 
 ```text
 src/
-  features/          # One directory per feature, including its UI and behavior
-  shared/
-    controllers/     # Player access and state transitions
-    models/          # Shared state and contracts
-    api/             # Explicit communication between features
-  toolbar/           # Tool registration, presentation, and docking
-  extension/         # Browser extension entry points and manifest
+  entrypoints/       # Extension startup, composition and lifecycle
+  core/              # Shared PlayerPort and Tool contracts
+  platform/youtube/  # Site selectors and current video lifecycle
+  features/          # Independent UI and behavior, with colocated tests
+  toolbar/           # Tool composition and bottom-docked presentation
 ```
 
-Features should use shared APIs when coordination is needed, rather than depending on one another's internal implementation. YouTube-specific layout detection should be centralized so compatibility fixes can be reused.
+Features use typed player capabilities and never query YouTube DOM or import another feature's internals. The YouTube adapter owns discovery and video replacement; the entry point connects dependencies. See the [architecture and scope](docs/architecture/overview.md) and [documentation index](docs/README.md).
 
 ## Initial roadmap
 
-1. Establish the browser extension foundation and development workflow.
-2. Build the dockable toolbar and shared player API.
-3. Select and implement the first tools, starting with playback speed as a candidate.
-4. Verify behavior across player modes, navigation, and observed YouTube layout variants.
+1. Implemented: extension foundation, typed player API and bottom toolbar.
+2. Implemented: [playback speed](docs/features/playback-speed.md) as the first feature example.
+3. Next: verify live navigation, player modes and observed YouTube layout variants.
+4. Planned: player docking, fullscreen handling and coordinated layout controls.
+
+The initial feature has no persistence, Shorts/embed support or fullscreen toolbar. No extra extension API permissions, backend or telemetry are used.
 
 ## Inspiration
 
@@ -45,7 +58,7 @@ Inspired by the useful controls in [Enhancer for YouTube™](https://chromewebst
 
 ## Contributing
 
-The project is at an early planning stage. Feature proposals, compatibility reports, and contributions are welcome. See [the development workflow](docs/development-workflow.md) for contribution and task management guidance. Development and installation instructions will follow with the first working extension.
+Feature proposals, compatibility reports, and contributions are welcome. Start with [adding a feature](docs/guides/adding-a-feature.md), follow the [development workflow](docs/development-workflow.md), and run `npm run check` before review. Only Ivo may approve and merge pull requests.
 
 ## License
 
