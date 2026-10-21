@@ -1,5 +1,7 @@
 import { defineContentScript } from "wxt/utils/define-content-script";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
+import { browser } from "wxt/browser";
+import { positionToolbar } from "../platform/youtube/toolbar-layout";
 import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
 import { mountToolbar } from "../toolbar/mount";
@@ -12,11 +14,37 @@ export default defineContentScript({
   async main(ctx) {
     const player = createPlayer(document);
     ctx.onInvalidated(() => player.dispose());
+    const saved = await browser.storage.local
+      .get(["toolbarPosition", "hiddenTools"])
+      .catch(() => ({}) as Record<string, unknown>);
+    if (ctx.isInvalid) return;
     const ui = await createShadowRootUi(ctx, {
       name: "open-youtube-tools",
       position: "inline",
       anchor: "body",
-      onMount: (container) => mountToolbar(container, player, [playbackSpeed]),
+      onMount: (container) =>
+        mountToolbar(container, player, [playbackSpeed], {
+          createLayout: (toolbar) =>
+            positionToolbar(
+              toolbar,
+              (container.getRootNode() as ShadowRoot).host as HTMLElement,
+              saved.toolbarPosition === "bottom" ? "bottom" : "player",
+            ),
+          position: saved.toolbarPosition === "bottom" ? "bottom" : "player",
+          hiddenTools: Array.isArray(saved.hiddenTools)
+            ? saved.hiddenTools.filter(
+                (id): id is string => typeof id === "string",
+              )
+            : [],
+          onHiddenToolsChange: (hiddenTools) => {
+            void browser.storage.local.set({ hiddenTools }).catch(console.warn);
+          },
+          onPositionChange: (toolbarPosition) => {
+            void browser.storage.local
+              .set({ toolbarPosition })
+              .catch(console.warn);
+          },
+        }),
       onRemove: (dispose) => dispose?.(),
     });
     if (!ctx.isInvalid) ui.mount();

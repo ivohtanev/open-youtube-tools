@@ -2,7 +2,7 @@
 
 ## Implemented foundation
 
-Open YouTube Tools is a Manifest V3 content-script extension for desktop Chromium browsers. The first vertical slice is a bottom-docked toolbar with playback speed controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code, account integration, background worker, or storage permission.
+Open YouTube Tools is a Manifest V3 content-script extension for desktop Chromium browsers. The toolbar attaches to the video by default, offers viewport-bottom docking and provides expandable playback speed controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code, account integration, or background worker. Extension-local storage saves toolbar position and disabled functions.
 
 ```text
 src/
@@ -36,18 +36,18 @@ The port exposes capability, not the video element. Calls resolve the current vi
 
 ## Scope and limitations
 
-Implemented: bottom docking, accessible native buttons, speed adjustment/reset, route visibility, video replacement, isolated styles and disposal. The toolbar uses a labeled section, avoiding ARIA toolbar keyboard semantics that are not implemented.
+Implemented: player/bottom docking, theater centering, fullscreen hosting and native-control visibility, persistent position, shared Floating UI panels, accessible native buttons, scroll/preset speed adjustment, route visibility, video replacement, isolated styles and disposal. See [toolbar architecture](../features/toolbar.md). The toolbar uses a labeled section, avoiding ARIA toolbar keyboard semantics that are not implemented.
 
-Not implemented: player docking, drag positioning, persistent settings, keyboard shortcuts, popup, custom speed presets, localization, Shorts/embed/mobile support, Firefox packaging or player layout controls. Fullscreen may hide the bottom toolbar because it is outside the fullscreen element. Theater mode does not change docking. Advertisements are not distinguished from content when they use the same video element.
+Not implemented: drag positioning, keyboard shortcuts, popup, custom speed presets, localization, Shorts/embed/mobile support, Firefox packaging or player layout controls. Fullscreen and theater behavior require live compatibility validation. Advertisements are not distinguished from content when they use the same video element.
 
 YouTube selectors and its navigation event are undocumented integration points. Synthetic DOM tests establish our behavior, not live YouTube compatibility. Verify the manual matrix before claiming support for a layout variant.
 
 ## Planned evolution
 
 1. Validate the initial slice on live YouTube and record browser/version/date evidence.
-2. Add a docking controller with explicit viewport/player targets, fullscreen handling and a single owner for positioning. Features must not position the toolbar themselves.
+2. Implemented: injected docking controller owns viewport/player positioning and fullscreen handling. Features do not position the toolbar.
 3. Add a player-mode controller only when shrink/expand/theater features exist. Model transitions explicitly and arbitrate conflicting requests there.
-4. Introduce a storage adapter and versioned settings contract when persistence is required. Choose permissions then.
+4. Implemented: entry point validates and persists toolbar position using extension-local storage. Introduce a versioned settings model if preferences grow.
 5. Reassess a UI framework if complex panels and shared reactive UI justify it; keep the PlayerPort and feature boundaries stable.
 
 These steps are proposals, not implemented APIs. Do not add empty controller directories or speculative state machinery for them.

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "./player";
 
 describe("YouTube player lifecycle", () => {
@@ -11,6 +11,7 @@ describe("YouTube player lifecycle", () => {
   });
   afterEach(() => {
     player.dispose();
+    vi.useRealTimers();
     document.body.replaceChildren();
   });
   it("updates the active video and rejects unsupported values", () => {
@@ -53,5 +54,44 @@ describe("YouTube player lifecycle", () => {
     document.body.replaceChildren();
     await Promise.resolve();
     expect(calls).toBe(1);
+  });
+  it("reuses native speed text, replaces rapid notices, and yields to native actions", () => {
+    vi.useFakeTimers();
+    document
+      .querySelector("#movie_player")!
+      .insertAdjacentHTML(
+        "beforeend",
+        '<div class="ytp-bezel-text-hide" style="display:none"><div class="ytp-bezel-text-wrapper"><div class="ytp-bezel-text">old</div></div><div class="ytp-bezel"><div class="ytp-bezel-icon">pause</div></div></div>',
+      );
+    const text = document.querySelector<HTMLElement>(".ytp-bezel-text")!;
+    const layer = text.parentElement!.parentElement!;
+    const bezel = document.querySelector<HTMLElement>(".ytp-bezel")!;
+    player.setPlaybackRate(1.02);
+    expect(text.textContent).toBe("1.02x");
+    expect(layer.style.display).toBe("block");
+    expect(bezel.style.display).toBe("none");
+    vi.advanceTimersByTime(400);
+    player.setPlaybackRate(1.04);
+    vi.advanceTimersByTime(400);
+    expect(text.textContent).toBe("1.04x");
+    expect(layer.style.display).toBe("block");
+    vi.advanceTimersByTime(250);
+    expect(layer.style.display).toBe("none");
+    expect(bezel.style.display).toBe("");
+    expect(text.textContent).toBe("old");
+    player.setPlaybackRate(1);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    expect(layer.style.display).toBe("none");
+    player.setPlaybackRate(1.02);
+    text.textContent = "native action";
+    vi.advanceTimersByTime(650);
+    expect(text.textContent).toBe("native action");
+    expect(layer.style.display).toBe("block");
+    player.setPlaybackRate(1);
+    player.dispose();
+    expect(layer.style.display).toBe("none");
+    vi.runOnlyPendingTimers();
+    expect(layer.style.display).toBe("none");
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

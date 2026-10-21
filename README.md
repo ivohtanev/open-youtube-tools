@@ -4,7 +4,7 @@ An open-source browser extension for a more comfortable YouTube experience, with
 
 ## Status
 
-Working Chromium Manifest V3 foundation with a bottom-docked toolbar and playback speed controls. Live YouTube compatibility validation is still pending; see the [testing matrix](docs/testing.md).
+Working Chromium Manifest V3 foundation with a compact player-attached toolbar, scroll speed control, expandable panels and persistent docking preferences. Live YouTube compatibility validation is still pending; see the [testing matrix](docs/testing.md).
 
 ## Vision
 
@@ -24,7 +24,7 @@ npm ci
 npm run check
 ```
 
-Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Use − / + to adjust speed and click the current rate to reset to 1×. For development, run `npm run dev`.
+Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Scroll over the speed icon in 0.02 steps. Click and expand its panel for preset − / + buttons and reset. Use ⋮ → Position to choose video or screen-bottom docking. For development, run `npm run dev`.
 
 See [local development](docs/guides/local-development.md) for setup and commands.
 
@@ -38,7 +38,7 @@ src/
   core/              # Shared PlayerPort and Tool contracts
   platform/youtube/  # Site selectors and current video lifecycle
   features/          # Independent UI and behavior, with colocated tests
-  toolbar/           # Tool composition and bottom-docked presentation
+  toolbar/           # Tool composition and shared Floating UI panels
 ```
 
 Features use typed player capabilities and never query YouTube DOM or import another feature's internals. The YouTube adapter owns discovery and video replacement; the entry point connects dependencies. See the [architecture and scope](docs/architecture/overview.md) and [documentation index](docs/README.md).
@@ -48,9 +48,9 @@ Features use typed player capabilities and never query YouTube DOM or import ano
 1. Implemented: extension foundation, typed player API and bottom toolbar.
 2. Implemented: [playback speed](docs/features/playback-speed.md) as the first feature example.
 3. Next: verify live navigation, player modes and observed YouTube layout variants.
-4. Planned: player docking, fullscreen handling and coordinated layout controls.
+4. Implemented: [compact toolbar](docs/features/toolbar.md), player docking, fullscreen handling and saved position.
 
-The initial feature has no persistence, Shorts/embed support or fullscreen toolbar. No extra extension API permissions, backend or telemetry are used.
+Toolbar position uses extension-local storage and the storage permission. Speed is not persisted. Shorts/embed support, backend and telemetry are absent. Live fullscreen compatibility remains to be verified.
 
 ## Inspiration
 

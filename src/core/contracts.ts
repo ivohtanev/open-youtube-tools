@@ -11,5 +11,14 @@ export interface PlayerPort {
 
 export interface Tool {
   id: string;
+  name: string;
+  icon: string;
   mount(container: HTMLElement, player: PlayerPort): () => void;
+}
+
+export type ToolbarPosition = "player" | "bottom";
+
+export interface ToolbarLayout {
+  setPosition(position: ToolbarPosition): void;
+  dispose(): void;
 }
