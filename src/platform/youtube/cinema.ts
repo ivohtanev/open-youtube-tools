@@ -17,7 +17,7 @@ export function createCinema(
   overlay.style.cssText =
     "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2147483646;";
   const maskId = `oyt-cinema-${crypto.randomUUID()}`;
-  overlay.innerHTML = `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect fill="black"/><rect fill="black"/></mask></defs><rect width="100%" height="100%" fill="black" fill-opacity="0.7" mask="url(#${maskId})"/>`;
+  overlay.innerHTML = `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect fill="black"/><rect fill="black"/></mask></defs><rect width="100%" height="100%" fill="black" fill-opacity="0.87" mask="url(#${maskId})"/>`;
   const holes = overlay.querySelectorAll("mask rect[fill=black]");
   const style = doc.createElementNS(ns, "style");
   style.textContent = `

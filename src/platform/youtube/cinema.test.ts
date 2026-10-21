@@ -33,10 +33,10 @@ afterEach(() => {
   vi.restoreAllMocks();
   document.body.replaceChildren();
 });
-it("dims by 70% and cuts clear windows around the player and toolbar", () => {
+it("dims by 87% and cuts clear windows around the player and toolbar", () => {
   cinema.toggle();
   const overlay = document.querySelector("[data-oyt-cinema]")!;
-  expect(overlay.querySelector('[fill-opacity="0.7"]')).not.toBeNull();
+  expect(overlay.querySelector('[fill-opacity="0.87"]')).not.toBeNull();
   const holes = overlay.querySelectorAll('mask rect[fill="black"]');
   expect(holes[0]?.getAttribute("x")).toBe("20");
   expect(holes[0]?.getAttribute("height")).toBe("360");

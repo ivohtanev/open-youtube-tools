@@ -27,7 +27,7 @@ While expanded, the secondary column is placed after the primary content and kno
 
 ### Cinema mode
 
-Click the film icon to dim the page by 70%, keeping the player clear. The toolbar also dims, returning to full brightness on hover or visible keyboard focus. Cinema and toolbar brightness use a short CSS transition, respecting reduced-motion preferences. Click again or press Escape to turn it off. The clear areas follow scrolling, resizing, mini player and fullscreen. Navigation and hiding the tool turn it off; its state is not saved. See [cinema mode](docs/features/cinema.md).
+Click the film icon to dim the page by 87%, keeping the player clear. The toolbar also dims, returning to full brightness on hover or visible keyboard focus. Cinema and toolbar brightness use a short CSS transition, respecting reduced-motion preferences. Click again or press Escape to turn it off. The clear areas follow scrolling, resizing, mini player and fullscreen. Navigation and hiding the tool turn it off; its state is not saved. See [cinema mode](docs/features/cinema.md).
 
 ### Screenshot
 
