@@ -6,7 +6,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it("docks to the player, centers theater, persists selection through fullscreen and follows controls", async () => {
+it("centers under the player in default and theater modes, persists selection through fullscreen and follows controls", async () => {
   document.body.innerHTML =
     '<ytd-watch-flexy><div id="full-bleed-container"></div><div id="player"><div id="movie_player"></div></div></ytd-watch-flexy><div id="host"><section></section></div>';
   const movie = document.querySelector<HTMLElement>("#movie_player")!;
@@ -19,7 +19,7 @@ it("docks to the player, centers theater, persists selection through fullscreen 
   const toolbar = host.querySelector("section")!;
   const layout = positionToolbar(toolbar, host, "player");
   expect(toolbar.style.top).toBe("500px");
-  expect(toolbar.style.left).toBe("100px");
+  expect(toolbar.style.left).toBe("500px");
   expect(host.previousElementSibling?.id).toBe("player");
   document.querySelector("ytd-watch-flexy")!.setAttribute("theater", "");
   layout.setPosition("player");
@@ -61,7 +61,7 @@ it("docks to the player, centers theater, persists selection through fullscreen 
   layout.setPosition("player");
   expect(toolbar.style.top).toBe("500px");
   expect(toolbar.style.right).toBe("auto");
-  expect(toolbar.style.left).toBe("100px");
-  expect(toolbar.style.transform).toBe("none");
+  expect(toolbar.style.left).toBe("500px");
+  expect(toolbar.style.transform).toBe("translateX(-50%)");
   layout.dispose();
 });
