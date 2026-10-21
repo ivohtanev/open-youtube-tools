@@ -25,6 +25,8 @@ This replaces the proposed general `shared/controllers`, `models` and `api` buck
 
 ## Runtime and cleanup
 
+The [expand player](../features/expand-player.md) adds `ExpandPlayerPort`. Its YouTube adapter applies reversible layout styles and computes viewport-fit dimensions from intrinsic video metadata. The icon-bearing feature supplies the toggle; it resets the layout when unmounted. Fullscreen/PiP suspend expansion, while the scroll mini player's video sizing remains independent through an explicit selector exclusion.
+
 The [mini player](../features/mini-player.md) adds a narrow `MiniPlayerPort` alongside `PlayerPort`. A YouTube adapter owns scroll geometry and temporary fixed video presentation; the feature owns controls in a separate body-anchored shadow UI. The same video stays in its original DOM parent. The entry point persists the default-enabled setting and the toolbar exposes it under Player Playback without an icon. All feature/platform dependency rules continue to apply.
 
 1. WXT injects the content script on `https://www.youtube.com/*`, including the homepage so later client-side navigation can work.
@@ -40,7 +42,7 @@ The port exposes capability, not the video element. Calls resolve the current vi
 
 Implemented: player/bottom docking, theater centering, fullscreen hosting and native-control visibility, persistent position, shared Floating UI panels, accessible native buttons, scroll/preset speed adjustment, route visibility, video replacement, isolated styles and disposal. See [toolbar architecture](../features/toolbar.md). The toolbar uses a labeled section, avoiding ARIA toolbar keyboard semantics that are not implemented.
 
-Not implemented: drag positioning, keyboard shortcuts, popup, custom speed presets, localization, Shorts/embed/mobile support, Firefox packaging or player layout controls. Fullscreen and theater behavior require live compatibility validation. Advertisements are not distinguished from content when they use the same video element.
+Not implemented: drag positioning, keyboard shortcuts, popup, custom speed presets, localization, Shorts/embed/mobile support or Firefox packaging. Expand/shrink supplies a viewport-fit page layout; its fullscreen, theater and experimental-layout interactions require live validation. Advertisements are not distinguished from content when they use the same video element.
 
 YouTube selectors and its navigation event are undocumented integration points. Synthetic DOM tests establish our behavior, not live YouTube compatibility. Verify the manual matrix before claiming support for a layout variant.
 

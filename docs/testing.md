@@ -6,6 +6,14 @@ Run `npm run check`. TypeScript checks the contracts, Vitest/jsdom checks behavi
 
 ## Owner acceptance — 2026-10-21
 
+Before work on expand/shrink, Ivo confirmed that all existing features through merged PR #5 were tested and approved. This supersedes the earlier general pending status for those features; no individual additional matrix results or browser version were provided. Expand/shrink was added afterward and needs its own acceptance.
+
+## Expand / shrink — 2026-10-21
+
+Automated cases cover viewport bounds and original aspect ratio, metadata sizing, identity and inline-style preservation, navigation/replacement, fullscreen suspension, accessible toggle, tool unmount and disposal. Live Brave DOM inspection confirmed classic watch wrappers, the absolute `#player-container`, and a separate fixed `#fixed-side-menu`; scoped styles include these containers. This inspection is not a live test of the new extension build. The browser integration blocked opening `chrome://extensions/`, so the build could not be reloaded through it. Reload the unpacked extension and watch tab manually before the [expand acceptance cases](features/expand-player.md#tests-and-manual-acceptance). Repeat with experiment-disabling Brave custom filters disabled; no experimental-layout result is claimed.
+
+## Earlier acceptance record
+
 Ivo reported testing the current extension in Brave on live YouTube and accepted the toolbar, animations and speed indicator after the CSS fade fix (`f245311`). This is owner-reported manual acceptance of the current behavior, including the previously reported indicator issue; it is not a GitHub approving review or merge authorization. Browser version, individual compatibility-matrix outcomes and console logs were not supplied.
 
 The implementation passed `npm run check` with 12 tests before this documentation update. Further features are deferred to a later session. Preserve the accepted interaction behavior when adding them.
