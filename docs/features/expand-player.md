@@ -2,11 +2,11 @@
 
 ## Status
 
-Implemented with automated geometry, lifecycle and toolbar tests. Live experimental YouTube compatibility is pending; DOM tests cannot establish support for all experiment variants.
+Implemented with automated geometry, lifecycle and toolbar tests. The original implementation failed owner testing; this correction targets the standard layout with a full-width player/control stage. Experimental-layout fixes are deferred; DOM tests cannot establish support for all experiment variants.
 
 ## User behavior
 
-The toolbar button immediately toggles between Expand video and Shrink video, with an accessible pressed state. Expansion fits the original intrinsic video aspect ratio inside the available page width and viewport height, reserving the masthead height and 44px for the toolbar. Until metadata is available, sizing uses 16:9 and updates on metadata or intrinsic-size changes. Portrait and ultrawide pictures remain uncropped. Shrink restores YouTube's own layout.
+The toolbar button immediately toggles between Expand video and Shrink video, with an accessible pressed state. Expansion makes the player stage span the available page width. Native controls span this stage with their usual 12px side insets, even when the picture is narrower. The picture fits its original intrinsic aspect ratio inside the stage and viewport height, reserving the masthead height and 44px for the toolbar. Until metadata is available, sizing uses 16:9 and updates on metadata or intrinsic-size changes. Portrait and ultrawide pictures remain uncropped. Shrink restores YouTube's own layout.
 
 The primary content becomes full width and the secondary column follows it in normal document flow. Known side-rail hosts lose fixed positioning. This does not modify YouTube experiment flags or require Brave filters. It does not hide recommendations or reparent the video.
 
@@ -16,7 +16,7 @@ Regular watch pages only. This is a page layout tool, not browser fullscreen. Ex
 
 ## Contracts and dependencies
 
-`ExpandPlayerPort` supplies toggle, reset and available/expanded subscriptions. The YouTube adapter owns sizing, selectors and a removable attribute-scoped stylesheet. CSSOM custom properties update geometry without overwriting native inline values. The feature owns a single button; the existing toolbar registers its Functions entry. The mini player's video rule is excluded from expansion's video sizing.
+`ExpandPlayerPort` supplies toggle, reset and available/expanded subscriptions. The YouTube adapter owns sizing, selectors and a removable attribute-scoped stylesheet. CSSOM custom properties update geometry without overwriting native inline values. The stage and the native zero-height `.html5-video-container` receive explicit height; the video fills that stage with `object-fit: contain`. Toggle/reset dispatches a resize event after layout is applied so native controls can refresh cached pixel dimensions. The feature owns a single button; the existing toolbar registers its Functions entry. The mini player's video rule is excluded from expansion's video sizing.
 
 ## Lifecycle and failure behavior
 

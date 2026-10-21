@@ -21,9 +21,9 @@ Scroll over the speed icon to change playback speed by 0.02 per wheel event, wit
 
 ### Expand / shrink video
 
-Click the expand icon to enlarge the existing player within the available page width and viewport height. The original video proportions are preserved, including portrait and ultrawide videos; height takes priority when full width would cut off the picture. Space is reserved for the masthead and toolbar. Click the shrink icon to restore YouTube's layout.
+Click the expand icon to make the existing player span the available page width, with native controls spanning that full player width (including their usual 12px side insets). The picture fits maximally inside this stage and the viewport height, as in theater mode. The original video proportions are preserved, including portrait and ultrawide videos; height takes priority when full width would cut off the picture. Space is reserved for the masthead and toolbar. Click the shrink icon to restore YouTube's layout.
 
-While expanded, the secondary column is placed after the primary content and known side-rail containers are released from fixed positioning. Scoped styles target classic and experimental grid containers without changing YouTube experiment flags. Fullscreen and picture in picture temporarily suspend the expanded layout. Navigation to another video and disabling the tool restore the native layout. Expand state is not saved. Experimental-layout compatibility still requires live testing with the Brave custom filters disabled. See [expand player](docs/features/expand-player.md).
+While expanded, the secondary column is placed after the primary content and known side-rail containers are released from fixed positioning. Scoped styles handle the standard watch layout without changing YouTube experiment flags. Experimental-layout fixes are deferred. Fullscreen and picture in picture temporarily suspend the expanded layout. Navigation to another video and disabling the tool restore the native layout. Expand state is not saved. Experimental-layout compatibility still requires live testing with the Brave custom filters disabled. See [expand player](docs/features/expand-player.md).
 
 ### Scroll mini player
 

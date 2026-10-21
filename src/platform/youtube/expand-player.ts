@@ -34,6 +34,10 @@ export function createExpandPlayer(
       margin: 0 !important; padding: 0 !important;
     }
     ytd-watch-flexy[data-oyt-expanded] #columns::after { display: none !important; }
+    ytd-watch-flexy[data-oyt-expanded] #below {
+      box-sizing: border-box !important; width: 100% !important;
+      padding-inline: 24px !important;
+    }
     ytd-watch-flexy[data-oyt-expanded] :is(#primary, #primary-inner) {
       width: 100% !important; max-width: none !important;
       min-width: 0 !important; margin: 0 !important; padding: 0 !important;
@@ -41,6 +45,7 @@ export function createExpandPlayer(
     }
     ytd-watch-flexy[data-oyt-expanded] :is(#secondary, #secondary-inner, #fixed-side-menu, .ytSideRailViewModelHost) {
       position: static !important; width: 100% !important; max-width: none !important;
+      box-sizing: border-box !important;
       min-width: 0 !important; height: auto !important; max-height: none !important;
       margin: 0 !important; transform: none !important; order: 2 !important;
       grid-column: 1 / -1 !important; grid-row: auto !important;
@@ -56,9 +61,15 @@ export function createExpandPlayer(
     }
     ytd-watch-flexy[data-oyt-expanded]:not([theater]) #full-bleed-container { height: 0 !important; }
     ytd-watch-flexy[data-oyt-expanded] #movie_player {
-      width: var(--oyt-expanded-width) !important; height: var(--oyt-expanded-height) !important;
+      width: 100% !important; height: var(--oyt-expanded-height) !important;
       max-width: 100% !important; min-width: 0 !important; min-height: 0 !important;
       margin: 0 auto !important;
+    }
+    ytd-watch-flexy[data-oyt-expanded] #movie_player .html5-video-container {
+      width: 100% !important; height: 100% !important;
+    }
+    ytd-watch-flexy[data-oyt-expanded] #movie_player .ytp-chrome-bottom {
+      width: calc(100% - 24px) !important; left: 12px !important; right: 12px !important;
     }
     ytd-watch-flexy[data-oyt-expanded] #movie_player video:not([data-oyt-mini-player]) {
       width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important;
@@ -134,7 +145,6 @@ export function createExpandPlayer(
         Math.max(0, viewportHeight - headerHeight - 44),
         ratio,
       );
-      sizing.setProperty("--oyt-expanded-width", `${size.width}px`);
       sizing.setProperty("--oyt-expanded-height", `${size.height}px`);
       if (observedHeader !== header) {
         if (observedHeader) resize?.unobserve(observedHeader);
@@ -188,10 +198,13 @@ export function createExpandPlayer(
         return;
       expanded = !expanded;
       update();
+      // Native controls cache pixel widths; let YouTube recalculate after layout.
+      win.dispatchEvent(new Event("resize"));
     },
     reset() {
       expanded = false;
       update();
+      win.dispatchEvent(new Event("resize"));
     },
     subscribe(listener) {
       listeners.add(listener);

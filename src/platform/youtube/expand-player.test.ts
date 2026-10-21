@@ -9,7 +9,7 @@ describe("expanded watch player", () => {
   beforeEach(() => {
     history.replaceState(null, "", "/watch?v=first");
     document.body.innerHTML =
-      '<div id="masthead-container"></div><ytd-watch-flexy><div id="columns"><div id="primary"><div id="player"><div id="movie_player"><video class="html5-main-video" style="width: 640px"></video></div></div></div><div id="secondary">Recommendations</div></div></ytd-watch-flexy>';
+      '<div id="masthead-container"></div><ytd-watch-flexy><div id="columns"><div id="primary"><div id="player"><div id="movie_player"><div class="html5-video-container"><video class="html5-main-video" style="width: 640px"></video></div><div class="ytp-chrome-bottom" style="width: 616px; left: 12px"></div></div></div></div><div id="secondary">Recommendations</div></div></ytd-watch-flexy>';
     watch = document.querySelector("ytd-watch-flexy")!;
     video = document.querySelector("video")!;
     Object.defineProperties(video, {
@@ -64,10 +64,8 @@ describe("expanded watch player", () => {
     });
     port.toggle();
     port.toggle();
-    expect(
-      parseFloat(sizing.getPropertyValue("--oyt-expanded-width")) /
-        parseFloat(sizing.getPropertyValue("--oyt-expanded-height")),
-    ).toBeCloseTo(9 / 16);
+    const height = parseFloat(sizing.getPropertyValue("--oyt-expanded-height"));
+    expect(height).toBeCloseTo(innerHeight - 100);
   });
   it("releases layout on navigation and follows replacement videos", async () => {
     port.toggle();
@@ -81,6 +79,33 @@ describe("expanded watch player", () => {
     history.replaceState(null, "", "/");
     document.dispatchEvent(new Event("yt-navigate-finish"));
     expect(watch.hasAttribute("data-oyt-expanded")).toBe(false);
+  });
+  it("notifies native resize handlers after applying and restoring expanded layout", () => {
+    const layouts: boolean[] = [];
+    const onResize = () =>
+      layouts.push(watch.hasAttribute("data-oyt-expanded"));
+    window.addEventListener("resize", onResize);
+    port.toggle();
+    port.reset();
+    window.removeEventListener("resize", onResize);
+    expect(layouts).toEqual([true, false]);
+  });
+  it("updates the fitted height on intrinsic video resize without another click", async () => {
+    vi.useFakeTimers();
+    port.toggle();
+    Object.defineProperties(video, {
+      videoWidth: { value: 4000 },
+      videoHeight: { value: 1000 },
+    });
+    video.dispatchEvent(new Event("resize"));
+    await vi.advanceTimersByTimeAsync(40);
+    const sizing = (
+      document.head.querySelector("style")!.sheet!.cssRules[0] as CSSStyleRule
+    ).style;
+    expect(
+      parseFloat(sizing.getPropertyValue("--oyt-expanded-height")),
+    ).toBeCloseTo(innerWidth / 4);
+    vi.useRealTimers();
   });
   it("suspends for fullscreen and restores after leaving", () => {
     port.toggle();
