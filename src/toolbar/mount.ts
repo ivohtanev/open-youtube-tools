@@ -64,7 +64,7 @@ export function mountToolbar(
   tools.forEach((tool) => setEnabled(tool, !hiddenTools.has(tool.id)));
   const settings = iconButton(
     "Toolbar options",
-    '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+    '<path d="m9 3-.5 2-2 1-2-.5-2 3.5L4 10.5v3L2.5 15l2 3.5 2-.5 2 1 .5 2h6l.5-2 2-1 2 .5 2-3.5-1.5-1.5v-3L21.5 9l-2-3.5-2 .5-2-1-.5-2Z"/><circle cx="12" cy="12" r="3"/>',
   );
   const menu = document.createElement("div");
   menu.className = "settings-panel";

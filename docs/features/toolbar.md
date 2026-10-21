@@ -1,6 +1,6 @@
 # Compact toolbar
 
-The default toolbar attaches directly below the video with rounded lower corners. It is 44 CSS pixels high with 24-pixel icons and 38-pixel targets, matching the approximate scale of the supplied 1080p reference. Speed and expand/shrink icons appear beside the rightmost vertical ellipsis, unless hidden through Functions. Normal mode aligns left; theater mode centers under the player.
+The default toolbar attaches directly below the video with rounded lower corners. It is 44 CSS pixels high with 24-pixel icons and 38-pixel targets, matching the approximate scale of the supplied 1080p reference. Speed and expand/shrink icons appear beside the rightmost settings gear, unless hidden through Functions. Normal and theater modes both center under the player. Active and modified icons turn light blue without a background.
 
 ## Shared panels
 
@@ -8,17 +8,17 @@ The default toolbar attaches directly below the video with rounded lower corners
 
 The speed panel contains the text “Change Speed with Scroll” and an outlined chevron that slides the controls open. Reduced-motion preferences disable animation. Use this shared component for future tool panels instead of adding per-feature positioning logic.
 
-Hover and focus do not open panels. Feature icons show an absolutely positioned compact 11.5 × 6.9 px downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options ellipsis has no hover arrow. Hover does not change button or menu-row colors. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
+Hover and focus do not open panels. Feature icons show an absolutely positioned compact 11.5 × 6.9 px downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options gear has no hover arrow. Hover does not change button or menu-row colors. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
 
 ## Settings and position
 
-The ellipsis opens a settings panel with a nested Position category. “Attached to video” and “Bottom of screen” change position immediately. The entry point stores `toolbarPosition` in extension-local storage; invalid or missing values default to player docking. This requires the `storage` permission. Speed is not persisted. Functions lists each registered tool with its icon, name and checkbox. Disabling unmounts the tool and cleans up its listeners; enabling mounts it again in its original slot. The `hiddenTools` setting is saved in extension-local storage; invalid values default to all tools enabled. Settings always remain available, including when every tool is disabled.
+The settings gear opens a settings panel with a nested Position category. “Attached to video” and “Bottom of screen” change position immediately. The entry point stores `toolbarPosition` in extension-local storage; invalid or missing values default to player docking. This requires the `storage` permission. Speed is not persisted. Functions lists each registered tool with its icon, name and checkbox. Disabling unmounts the tool and cleans up its listeners; enabling mounts it again in its original slot. The `hiddenTools` setting is saved in extension-local storage; invalid values default to all tools enabled. Settings always remain available, including when every tool is disabled.
 
 `ToolbarPosition` and `ToolbarLayout` are core contracts. The entry point injects the YouTube layout adapter into the toolbar. Only `platform/youtube/toolbar-layout.ts` owns site selectors, player geometry, theater detection and fullscreen hosting. The adapter reserves space for player docking, observes resize/layout/navigation, coalesces updates with animation frames and releases observers on disposal.
 
 During fullscreen the host moves inside the fullscreen element, centers at its bottom edge, and uses an 80% opaque background. YouTube's `ytp-autohide` class hides the whole toolbar and makes it inert. Leaving fullscreen restores the selected position. Fullscreen is a temporary layout override, not a saved preference change.
 
-During expand mode the player-docked toolbar centers immediately below the player, with its usual 44px of document-flow space. The player still fills all viewport height below the retained YouTube masthead; the toolbar does not reduce picture height and can be reached by scrolling slightly. Native controls remain inside the player. Shrink restores normal alignment; saved bottom docking remains unchanged.
+During expand mode the player-docked toolbar centers immediately below the player, with its usual 44px of document-flow space. The player still fills all viewport height below the retained YouTube masthead; the toolbar does not reduce picture height and can be reached by scrolling slightly. Native controls remain inside the player. Shrink keeps the toolbar centered under the player; saved bottom docking remains unchanged.
 
 ## Validation boundary
 

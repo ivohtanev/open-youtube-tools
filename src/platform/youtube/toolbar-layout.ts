@@ -20,7 +20,6 @@ export function positionToolbar(
     const watch = document.querySelector("ytd-watch-flexy");
     const fullscreen = document.fullscreenElement;
     const theater = watch?.hasAttribute("theater") ?? false;
-    const expanded = watch?.hasAttribute("data-oyt-expanded") ?? false;
     if (movie !== observed) {
       resize?.disconnect();
       if (movie) resize?.observe(movie);
@@ -59,11 +58,8 @@ export function positionToolbar(
       top: bottom ? "auto" : `${rect?.bottom ?? 0}px`,
       bottom: bottom ? "0px" : "auto",
       right: "auto",
-      left:
-        bottom || theater || expanded
-          ? `${fullscreenPlayer && rect ? rect.left + rect.width / 2 : (theater || expanded) && !bottom && rect ? rect.left + rect.width / 2 : innerWidth / 2}px`
-          : `${Math.max(0, rect?.left ?? 0)}px`,
-      transform: bottom || theater || expanded ? "translateX(-50%)" : "none",
+      left: `${rect && (!bottom || fullscreenPlayer) ? rect.left + rect.width / 2 : innerWidth / 2}px`,
+      transform: "translateX(-50%)",
       visibility:
         !bottom && (!rect || rect.bottom < 0 || rect.bottom > innerHeight)
           ? "hidden"

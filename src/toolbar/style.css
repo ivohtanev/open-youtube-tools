@@ -27,7 +27,7 @@
   border-radius: 18px 18px 0 0;
 }
 .oyt-toolbar[data-cinema="true"]:not(:hover):not(:has(:focus-visible)) {
-  filter: brightness(0.13);
+  filter: brightness(0.7);
 }
 .oyt-toolbar[data-fullscreen="true"] {
   background: rgb(39 39 39 / 80%);
@@ -50,7 +50,7 @@ button {
   cursor: pointer;
 }
 button[aria-pressed="true"] {
-  background: #ffffff18;
+  color: #8ab4f8;
 }
 button:focus-visible {
   outline: 2px solid #a6e3c0;
@@ -72,7 +72,7 @@ button:disabled {
   height: 24px;
 }
 .icon-button[data-modified="true"] {
-  color: #a6e3c0;
+  color: #8ab4f8;
 }
 .popover {
   position: fixed;
