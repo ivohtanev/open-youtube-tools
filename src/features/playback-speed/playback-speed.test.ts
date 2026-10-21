@@ -220,3 +220,56 @@ it("keeps the native notice visible for every wheel tick despite native hide tim
     player.dispose();
   }
 });
+
+it.each([false, true])(
+  "keeps the panel open when the focused limit button disables (shadow root: %s)",
+  async (shadow) => {
+    vi.useFakeTimers();
+    history.replaceState(null, "", "/watch?v=test");
+    document.body.innerHTML =
+      '<div id="movie_player"><video class="html5-main-video"></video></div>';
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = shadow ? host.attachShadow({ mode: "open" }) : host;
+    const container = document.createElement("div");
+    root.append(container);
+    const player = createPlayer(document);
+    const dispose = mountToolbar(container, player, [playbackSpeed]);
+    const button = (label: string) =>
+      container.querySelector<HTMLButtonElement>(
+        'button[aria-label="' + label + '"]',
+      )!;
+    const trigger = button("Change Speed with Scroll");
+    const reset = button("Reset playback speed to 1×");
+    const panel = container.querySelector<HTMLElement>(".tool .popover")!;
+    try {
+      trigger.click();
+      button("Expand playback speed controls").click();
+      for (const [rate, label, limit] of [
+        [1.75, "Increase playback speed", 2],
+        [0.5, "Decrease playback speed", 0.25],
+      ] as const) {
+        player.setPlaybackRate(rate);
+        const control = button(label);
+        control.focus();
+        control.click();
+        expect(player.snapshot().playbackRate).toBe(limit);
+        expect(control.disabled).toBe(true);
+        expect(
+          shadow ? (root as ShadowRoot).activeElement : document.activeElement,
+        ).toBe(reset);
+        await vi.advanceTimersByTimeAsync(250);
+        expect(panel.hidden).toBe(false);
+        expect(trigger.getAttribute("aria-expanded")).toBe("true");
+      }
+      reset.click();
+      expect(player.snapshot().playbackRate).toBe(1);
+      expect(panel.hidden).toBe(false);
+      document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+      expect(panel.hidden).toBe(true);
+    } finally {
+      dispose();
+      player.dispose();
+    }
+  },
+);

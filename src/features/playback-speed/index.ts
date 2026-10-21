@@ -87,6 +87,19 @@ export const playbackSpeed: Tool = {
     container.append(group);
     const popover = createPopover(trigger, panel);
     const unsubscribe = player.subscribe(({ available, playbackRate }) => {
+      const root = group.getRootNode();
+      const active =
+        root instanceof ShadowRoot
+          ? root.activeElement
+          : document.activeElement;
+      // Disabling the focused limit button can blur it to the page, which the
+      // popover treats as leaving the panel. Keep focus on an enabled control.
+      if (
+        available &&
+        ((active === faster && playbackRate >= 2) ||
+          (active === slower && playbackRate <= 0.25))
+      )
+        reset.focus({ preventScroll: true });
       trigger.disabled = !available;
       trigger.dataset.modified = String(playbackRate !== 1);
       slower.disabled = !available || playbackRate <= 0.25;

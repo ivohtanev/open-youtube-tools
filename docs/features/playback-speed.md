@@ -4,7 +4,7 @@ The toolbar exposes a speedometer icon. Clicking shows “Change Speed with Scro
 
 Scrolling up over the icon increases speed by 0.02; scrolling down decreases it by 0.02. Wheel events outside the icon are unaffected. Ctrl-wheel retains browser zoom behavior. Rates are rounded to two decimal places and clamped to 0.25–2×. Each nonzero vertical wheel event is one step, including trackpad events.
 
-Buttons move to the next strictly greater or smaller 0.25 preset, rather than adding an offset to a custom rate: 1.05 → 1.25 with + and 1.05 → 1.00 with −. Clicking the displayed rate resets to 1.00×. Boundary buttons disable; native YouTube rate changes update the controls and an accessible status region. A modified rate highlights the icon.
+Buttons move to the next strictly greater or smaller 0.25 preset, rather than adding an offset to a custom rate: 1.05 → 1.25 with + and 1.05 → 1.00 with −. Clicking the displayed rate resets to 1.00×. Boundary buttons disable; if the clicked/focused button reaches a limit, focus moves to the enabled reset control before disabling it so the panel remains open. Native YouTube rate changes update the controls and an accessible status region. A modified rate highlights the icon.
 
 The feature implements `Tool`, uses `PlayerPort` and the shared popover component, and never queries YouTube selectors or storage. No speed is reapplied after navigation. Unavailable video closes the panel and disables controls; disposal removes subscriptions and popover listeners.
 
