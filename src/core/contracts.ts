@@ -16,6 +16,14 @@ export interface Tool {
   mount(container: HTMLElement, player: PlayerPort): () => void;
 }
 
+export interface ExpandPlayerPort {
+  toggle(): void;
+  reset(): void;
+  subscribe(
+    listener: (state: { available: boolean; expanded: boolean }) => void,
+  ): () => void;
+}
+
 export type ToolbarPosition = "player" | "bottom";
 
 export interface ToolbarLayout {

@@ -25,17 +25,22 @@ export function mountToolbar(
   toolbar.setAttribute("aria-label", "Open YouTube Tools");
   container.append(toolbar);
   // Keep interactions from activating the underlying fullscreen player.
-  for (const name of [
-    "click",
-    "dblclick",
-    "pointerdown",
-    "mousedown",
-    "keyup",
-  ]) {
+  for (const name of ["click", "dblclick", "pointerdown", "mousedown"]) {
     toolbar.addEventListener(name, (event) => event.stopPropagation());
   }
+  const isNativeModeShortcut = (event: KeyboardEvent) =>
+    event.key.toLowerCase() === "t" &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.metaKey &&
+    !event.isComposing;
+  // Keep YouTube's mode shortcut available after clicking a focused tool button.
   toolbar.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") event.stopPropagation();
+    if (event.key !== "Escape" && !isNativeModeShortcut(event))
+      event.stopPropagation();
+  });
+  toolbar.addEventListener("keyup", (event) => {
+    if (!isNativeModeShortcut(event)) event.stopPropagation();
   });
   const hiddenTools = new Set(options.hiddenTools ?? []);
   const mounted = new Map<string, () => void>();

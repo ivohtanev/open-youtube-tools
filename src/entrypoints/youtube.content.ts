@@ -4,6 +4,8 @@ import { browser } from "wxt/browser";
 import { positionToolbar } from "../platform/youtube/toolbar-layout";
 import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
+import { expandPlayer } from "../features/expand-player";
+import { createExpandPlayer } from "../platform/youtube/expand-player";
 import { createMiniPlayer } from "../platform/youtube/mini-player";
 import { mountMiniPlayer } from "../features/mini-player";
 import { mountToolbar } from "../toolbar/mount";
@@ -15,6 +17,8 @@ export default defineContentScript({
   cssInjectionMode: "ui",
   async main(ctx) {
     const player = createPlayer(document);
+    const expandedPlayer = createExpandPlayer(document);
+    ctx.onInvalidated(() => expandedPlayer.dispose());
     ctx.onInvalidated(() => player.dispose());
     const saved = await browser.storage.local
       .get(["toolbarPosition", "hiddenTools", "miniPlayerEnabled"])
@@ -40,35 +44,42 @@ export default defineContentScript({
       position: "inline",
       anchor: "body",
       onMount: (container) =>
-        mountToolbar(container, player, [playbackSpeed], {
-          miniPlayerEnabled: saved.miniPlayerEnabled !== false,
-          onMiniPlayerEnabledChange: (miniPlayerEnabled) => {
-            miniPlayer.setEnabled(miniPlayerEnabled);
-            void browser.storage.local
-              .set({ miniPlayerEnabled })
-              .catch(console.warn);
+        mountToolbar(
+          container,
+          player,
+          [playbackSpeed, expandPlayer(expandedPlayer)],
+          {
+            miniPlayerEnabled: saved.miniPlayerEnabled !== false,
+            onMiniPlayerEnabledChange: (miniPlayerEnabled) => {
+              miniPlayer.setEnabled(miniPlayerEnabled);
+              void browser.storage.local
+                .set({ miniPlayerEnabled })
+                .catch(console.warn);
+            },
+            createLayout: (toolbar) =>
+              positionToolbar(
+                toolbar,
+                (container.getRootNode() as ShadowRoot).host as HTMLElement,
+                saved.toolbarPosition === "bottom" ? "bottom" : "player",
+              ),
+            position: saved.toolbarPosition === "bottom" ? "bottom" : "player",
+            hiddenTools: Array.isArray(saved.hiddenTools)
+              ? saved.hiddenTools.filter(
+                  (id): id is string => typeof id === "string",
+                )
+              : [],
+            onHiddenToolsChange: (hiddenTools) => {
+              void browser.storage.local
+                .set({ hiddenTools })
+                .catch(console.warn);
+            },
+            onPositionChange: (toolbarPosition) => {
+              void browser.storage.local
+                .set({ toolbarPosition })
+                .catch(console.warn);
+            },
           },
-          createLayout: (toolbar) =>
-            positionToolbar(
-              toolbar,
-              (container.getRootNode() as ShadowRoot).host as HTMLElement,
-              saved.toolbarPosition === "bottom" ? "bottom" : "player",
-            ),
-          position: saved.toolbarPosition === "bottom" ? "bottom" : "player",
-          hiddenTools: Array.isArray(saved.hiddenTools)
-            ? saved.hiddenTools.filter(
-                (id): id is string => typeof id === "string",
-              )
-            : [],
-          onHiddenToolsChange: (hiddenTools) => {
-            void browser.storage.local.set({ hiddenTools }).catch(console.warn);
-          },
-          onPositionChange: (toolbarPosition) => {
-            void browser.storage.local
-              .set({ toolbarPosition })
-              .catch(console.warn);
-          },
-        }),
+        ),
       onRemove: (dispose) => dispose?.(),
     });
     if (!ctx.isInvalid) ui.mount();

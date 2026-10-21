@@ -10,6 +10,7 @@ Read this index before changing architecture or adding a feature.
 | [Adding a feature](guides/adding-a-feature.md)                   | Implementation and documentation checklist               |
 | [Playback speed](features/playback-speed.md)                     | First feature's behavior, contracts and limitations      |
 | [Mini player](features/mini-player.md)                           | Scroll-triggered picture and saved playback setting      |
+| [Expand player](features/expand-player.md)                       | Viewport-fit picture and reversible full-width layout    |
 | [Testing](testing.md)                                            | Automated coverage and manual compatibility matrix       |
 | [Development workflow](development-workflow.md)                  | Task isolation, branches and owner-only merge rules      |
 

@@ -1,6 +1,6 @@
 # Compact toolbar
 
-The default toolbar attaches directly below the video with rounded lower corners. It is 44 CSS pixels high with 24-pixel icons and 38-pixel targets, matching the approximate scale of the supplied 1080p reference. Only the speed icon and the rightmost vertical ellipsis are visible. Normal mode aligns left; theater mode centers under the player.
+The default toolbar attaches directly below the video with rounded lower corners. It is 44 CSS pixels high with 24-pixel icons and 38-pixel targets, matching the approximate scale of the supplied 1080p reference. Speed and expand/shrink icons appear beside the rightmost vertical ellipsis, unless hidden through Functions. Normal mode aligns left; theater mode centers under the player.
 
 ## Shared panels
 
@@ -17,6 +17,8 @@ The ellipsis opens a settings panel with a nested Position category. “Attached
 `ToolbarPosition` and `ToolbarLayout` are core contracts. The entry point injects the YouTube layout adapter into the toolbar. Only `platform/youtube/toolbar-layout.ts` owns site selectors, player geometry, theater detection and fullscreen hosting. The adapter reserves space for player docking, observes resize/layout/navigation, coalesces updates with animation frames and releases observers on disposal.
 
 During fullscreen the host moves inside the fullscreen element, centers at its bottom edge, and uses an 80% opaque background. YouTube's `ytp-autohide` class hides the whole toolbar and makes it inert. Leaving fullscreen restores the selected position. Fullscreen is a temporary layout override, not a saved preference change.
+
+During expand mode the player-docked toolbar centers immediately below the player, with its usual 44px of document-flow space. The player still fills all viewport height below the retained YouTube masthead; the toolbar does not reduce picture height and can be reached by scrolling slightly. Native controls remain inside the player. Shrink restores normal alignment; saved bottom docking remains unchanged.
 
 ## Validation boundary
 
