@@ -1,4 +1,4 @@
-# OpenTube Tools
+# Open YouTube Tools
 
 An open-source browser extension for a more comfortable YouTube experience, with modular tools and a fresh, compact interface.
 
@@ -41,7 +41,7 @@ Features should use shared APIs when coordination is needed, rather than dependi
 
 ## Inspiration
 
-Inspired by the useful controls in [Enhancer for YouTube™](https://chromewebstore.google.com/detail/enhancer-for-youtube/ponfpcnoihfmfllpaingbgckeeldkhle). OpenTube Tools is an independent project with its own implementation and interface. It is not affiliated with YouTube, Google, or Enhancer for YouTube™.
+Inspired by the useful controls in [Enhancer for YouTube™](https://chromewebstore.google.com/detail/enhancer-for-youtube/ponfpcnoihfmfllpaingbgckeeldkhle). Open YouTube Tools is an independent project with its own implementation and interface. It is not affiliated with YouTube, Google, or Enhancer for YouTube™.
 
 ## Contributing
 
