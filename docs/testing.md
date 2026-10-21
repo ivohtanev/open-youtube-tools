@@ -12,6 +12,8 @@ The implementation passed `npm run check` with 12 tests before this documentatio
 
 ## Manual acceptance matrix
 
+The second feature adds a [scroll mini player](features/mini-player.md). Its DOM tests and initial Brave canvas-stream fixture cover scroll restoration, one video, Play/Pause, progress, lifecycle and the iconless setting. Live Brave testing on 2026-10-21 verified the header offset and hover fade. The initial opacity check did not establish correct stacking over comments. A subsequent targeted check reloaded the rebuilt extension and scrolled actual comments/avatars/text behind the picture: both video and controls were in the browser's top layer, content stayed behind the video, one video remained and Play/Pause worked. Both floating rectangles measured 338 × 190.125px at (12, 68) below the measured 56px masthead. Scrolling up closed both top-layer presentations, removed the temporary video popover attribute and continued native playback. Remaining compatibility cases and browser version are not recorded; follow the feature's manual acceptance list before marking ready.
+
 Record browser version, date, page type/layout, result and any console errors in the PR. Use the following matrix for detailed compatibility passes. Owner acceptance is recorded above; individual case outcomes have not been recorded, so do not infer case-by-case coverage from that report:
 
 | Case                                    | Expected result                                                  |

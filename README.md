@@ -4,7 +4,7 @@ An open-source browser extension for a more comfortable YouTube experience, with
 
 ## Status
 
-Working Chromium Manifest V3 foundation with a compact player-attached toolbar, scroll speed control, expandable panels and persistent docking preferences. Live YouTube compatibility validation is still pending; see the [testing matrix](docs/testing.md).
+Working Chromium Manifest V3 foundation with a compact player-attached toolbar, scroll speed control, expandable panels, persistent docking preferences and a [scroll mini player](docs/features/mini-player.md). Live YouTube compatibility validation of the mini player is still pending; see the [testing matrix](docs/testing.md).
 
 ## Vision
 
@@ -27,6 +27,8 @@ npm run check
 Load `.output/chrome-mv3` as an unpacked extension in Chrome or Edge, then reload a YouTube watch page. Scroll over the speed icon in 0.02 steps. Click and expand its panel for preset − / + buttons and reset. Use ⋮ → Position to choose video or screen-bottom docking. For development, run `npm run dev`.
 
 See [local development](docs/guides/local-development.md) for setup and commands.
+
+The mini player is enabled by default. Scroll the main player out of view to keep watching in the top-left corner at 25% of the viewport width. Scroll back up to restore it. Use **⋮ → Player Playback → Mini player** to switch it off or on; this preference is saved and the feature adds no toolbar icon.
 
 ## Architecture
 

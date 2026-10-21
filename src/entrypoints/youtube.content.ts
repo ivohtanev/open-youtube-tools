@@ -4,6 +4,8 @@ import { browser } from "wxt/browser";
 import { positionToolbar } from "../platform/youtube/toolbar-layout";
 import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
+import { createMiniPlayer } from "../platform/youtube/mini-player";
+import { mountMiniPlayer } from "../features/mini-player";
 import { mountToolbar } from "../toolbar/mount";
 import "../toolbar/style.css";
 
@@ -15,15 +17,37 @@ export default defineContentScript({
     const player = createPlayer(document);
     ctx.onInvalidated(() => player.dispose());
     const saved = await browser.storage.local
-      .get(["toolbarPosition", "hiddenTools"])
+      .get(["toolbarPosition", "hiddenTools", "miniPlayerEnabled"])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
+    const miniPlayer = createMiniPlayer(
+      document,
+      saved.miniPlayerEnabled !== false,
+    );
+    ctx.onInvalidated(() => miniPlayer.dispose());
+    // A separate body host stays outside the toolbar's fullscreen/docking moves.
+    const miniUi = await createShadowRootUi(ctx, {
+      name: "open-youtube-mini-player",
+      position: "inline",
+      anchor: "body",
+      onMount: (container) => mountMiniPlayer(container, miniPlayer),
+      onRemove: (dispose) => dispose?.(),
+    });
+    if (ctx.isInvalid) return;
+    miniUi.mount();
     const ui = await createShadowRootUi(ctx, {
       name: "open-youtube-tools",
       position: "inline",
       anchor: "body",
       onMount: (container) =>
         mountToolbar(container, player, [playbackSpeed], {
+          miniPlayerEnabled: saved.miniPlayerEnabled !== false,
+          onMiniPlayerEnabledChange: (miniPlayerEnabled) => {
+            miniPlayer.setEnabled(miniPlayerEnabled);
+            void browser.storage.local
+              .set({ miniPlayerEnabled })
+              .catch(console.warn);
+          },
           createLayout: (toolbar) =>
             positionToolbar(
               toolbar,

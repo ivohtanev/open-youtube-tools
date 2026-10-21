@@ -21,9 +21,11 @@ docs/
 
 The entry point composes the YouTube adapter, toolbar and feature registry. Features and toolbar depend on core contracts. The adapter implements those contracts. Core must not import platform, toolbar or features. Features must not import each other or query YouTube DOM. Tests may assemble multiple layers to verify integration.
 
-This replaces the proposed general `shared/controllers`, `models` and `api` buckets with explicit boundaries. There is one typed port instead of several overlapping abstractions. A UI framework, global store, event bus and dependency-injection library are not needed for this slice. Native DOM components keep the runtime small; introduce additional abstractions only when a concrete second use case demonstrates the need.
+This replaces the proposed general `shared/controllers`, `models` and `api` buckets with explicit boundaries. Narrow typed ports expose concrete player capabilities. A UI framework, global store, event bus and dependency-injection library are not needed for this slice. Native DOM components keep the runtime small; introduce additional abstractions only when a concrete use case demonstrates the need.
 
 ## Runtime and cleanup
+
+The [mini player](../features/mini-player.md) adds a narrow `MiniPlayerPort` alongside `PlayerPort`. A YouTube adapter owns scroll geometry and temporary fixed video presentation; the feature owns controls in a separate body-anchored shadow UI. The same video stays in its original DOM parent. The entry point persists the default-enabled setting and the toolbar exposes it under Player Playback without an icon. All feature/platform dependency rules continue to apply.
 
 1. WXT injects the content script on `https://www.youtube.com/*`, including the homepage so later client-side navigation can work.
 2. The adapter finds `#movie_player video.html5-main-video` only on `/watch`. No matching element means unavailable, not an error.
@@ -46,7 +48,7 @@ YouTube selectors and its navigation event are undocumented integration points. 
 
 1. Validate the initial slice on live YouTube and record browser/version/date evidence.
 2. Implemented: injected docking controller owns viewport/player positioning and fullscreen handling. Features do not position the toolbar.
-3. Add a player-mode controller only when shrink/expand/theater features exist. Model transitions explicitly and arbitrate conflicting requests there.
+3. Implemented: the mini-player adapter owns scroll-triggered picture presentation and releases it during fullscreen/PiP. Introduce shared arbitration only if future player modes conflict.
 4. Implemented: entry point validates and persists toolbar position using extension-local storage. Introduce a versioned settings model if preferences grow.
 5. Reassess a UI framework if complex panels and shared reactive UI justify it; keep the PlayerPort and feature boundaries stable.
 

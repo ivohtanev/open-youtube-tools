@@ -13,4 +13,6 @@
 
 ## Feature document sections
 
+For a background feature without a toolbar icon, expose a narrow core capability and mount its UI separately in the entry point. Add its setting to the appropriate toolbar category instead of registering an icon-bearing `Tool`. The mini player follows this pattern using Player Playback.
+
 Use: Status; User behavior; Scope and non-goals; Contracts and dependencies; Lifecycle and failure behavior; Tests and manual acceptance; Known limitations. State what is verified and what remains unverified. The [playback speed specification](../features/playback-speed.md) is the first example.

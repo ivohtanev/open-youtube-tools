@@ -20,4 +20,6 @@ During fullscreen the host moves inside the fullscreen element, centers at its b
 
 ## Validation boundary
 
+The settings menu also contains **Player Playback → Mini player**, an iconless checkbox enabled by default. The entry point persists `miniPlayerEnabled` and updates the floating picture immediately. This capability is independent of Functions and adds no toolbar slot. See [mini player](mini-player.md).
+
 DOM tests cover positioning and speed behavior. A Chromium fixture at 1920×1080 exercises actual rendering and interaction; it does not establish live YouTube compatibility. Validate normal/theater/fullscreen, native controls hiding, navigation, restored settings and narrow viewports on live YouTube before marking the PR ready.
