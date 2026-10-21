@@ -161,6 +161,117 @@ it("keeps video and controls 12px below the measured header and follows header c
   f.dispose();
 });
 
+it("keeps video and controls beside the measured guide and returns them when it closes", () => {
+  const f = setup();
+  const guide = document.createElement("div");
+  guide.id = "guide-content";
+  document.body.append(guide);
+  let right = 240;
+  vi.spyOn(guide, "getBoundingClientRect").mockImplementation(() => ({
+    top: 0,
+    bottom: 900,
+    left: right - 240,
+    right,
+    width: 240,
+    height: 900,
+    x: right - 240,
+    y: 0,
+    toJSON() {},
+  }));
+  f.video.currentTime = 42;
+  f.move(-10);
+  const overlay = f.container.querySelector<HTMLElement>("section")!;
+  const rules = [
+    ...document.querySelector("style")!.sheet!.cssRules,
+  ] as CSSStyleRule[];
+  const videoRule = rules.find((rule) => rule.selectorText.includes("video["))!;
+  expect(overlay.hidden).toBe(false);
+  expect(overlay.style.left).toBe("252px");
+  expect(videoRule.style.getPropertyValue("left")).toBe("252px");
+  right = 120;
+  f.player.setEnabled(true);
+  expect(overlay.style.left).toBe("132px");
+  right = 0;
+  f.player.setEnabled(true);
+  expect(overlay.style.left).toBe("12px");
+  right = 240;
+  guide.style.visibility = "hidden";
+  f.player.setEnabled(true);
+  expect(overlay.style.left).toBe("12px");
+  expect(videoRule.style.getPropertyValue("left")).toBe("12px");
+  expect(document.querySelectorAll("video")).toHaveLength(1);
+  expect(f.video.currentTime).toBe(42);
+  f.dispose();
+});
+
+it("reacts to guide open/close attributes and tracks its slide before stopping animation work", async () => {
+  const callbacks = new Map<number, FrameRequestCallback>();
+  let id = 0;
+  let now = 0;
+  vi.spyOn(window.performance, "now").mockImplementation(() => now);
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    callbacks.set(++id, callback);
+    return id;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation((key) => {
+    callbacks.delete(key);
+  });
+  const f = setup();
+  const drawer = document.createElement("div");
+  drawer.id = "guide";
+  drawer.style.transitionDuration = "0.2s";
+  const guide = document.createElement("div");
+  guide.id = "guide-content";
+  drawer.append(guide);
+  document.body.append(drawer);
+  let right = 0;
+  vi.spyOn(guide, "getBoundingClientRect").mockImplementation(() => ({
+    top: 0,
+    bottom: 900,
+    left: right - 240,
+    right,
+    width: 240,
+    height: 900,
+    x: right - 240,
+    y: 0,
+    toJSON() {},
+  }));
+  f.move(-10);
+  const overlay = f.container.querySelector<HTMLElement>("section")!;
+  drawer.setAttribute("opened", "");
+  await Promise.resolve();
+  function flush(time: number) {
+    now = time;
+    const pending = [...callbacks.values()];
+    callbacks.clear();
+    pending.forEach((callback) => callback(time));
+  }
+  flush(0);
+  expect(callbacks.size).toBe(1);
+  right = 240;
+  flush(200);
+  expect(overlay.style.left).toBe("252px");
+  flush(300);
+  expect(callbacks.size).toBe(0);
+  drawer.removeAttribute("opened");
+  await Promise.resolve();
+  right = 0;
+  flush(500);
+  expect(overlay.style.left).toBe("12px");
+  flush(600);
+  right = 240;
+  guide.dispatchEvent(new Event("transitionend", { bubbles: true }));
+  expect(callbacks.size).toBe(1);
+  flush(700);
+  expect(overlay.style.left).toBe("252px");
+  right = 0;
+  guide.dispatchEvent(new Event("transitioncancel", { bubbles: true }));
+  flush(800);
+  expect(overlay.style.left).toBe("12px");
+  f.dispose();
+  expect(callbacks.size).toBe(0);
+});
+
 it("leaves native wrapper clipping and opacity untouched while floating", () => {
   const f = setup();
   const wrapper = f.video.parentElement!;

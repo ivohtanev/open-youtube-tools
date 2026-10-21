@@ -15,6 +15,9 @@ export function createMiniPlayer(
   let movie: HTMLElement | null = null;
   let active = false;
   let top = 12;
+  let left = 12;
+  let guideMotionUntil = 0;
+  let guideContent: HTMLElement | null = null;
   let header: HTMLElement | null = null;
   let restorePopover: (() => void) | undefined;
   const listeners = new Set<(state: MiniPlayerSnapshot) => void>();
@@ -53,6 +56,7 @@ export function createMiniPlayer(
   const snapshot = (): MiniPlayerSnapshot => ({
     active,
     top,
+    left,
     paused: video?.paused ?? true,
     progress:
       video && Number.isFinite(video.duration) && video.duration > 0
@@ -97,6 +101,7 @@ export function createMiniPlayer(
       resize?.disconnect();
       if (movie) resize?.observe(movie);
       if (header) resize?.observe(header);
+      if (guideContent) resize?.observe(guideContent);
     }
     const nextHeader = doc.querySelector<HTMLElement>(
       "#masthead-container, ytd-masthead",
@@ -120,6 +125,28 @@ export function createMiniPlayer(
     top = headerBottom + 12;
     // CSSOM updates do not rewrite YouTube's inline styles or trigger DOM observers.
     videoRule.style.setProperty("top", `${top}px`, "important");
+    const nextGuideContent = doc.querySelector<HTMLElement>("#guide-content");
+    if (nextGuideContent !== guideContent) {
+      if (guideContent) resize?.unobserve(guideContent);
+      guideContent = nextGuideContent;
+      if (guideContent) resize?.observe(guideContent);
+    }
+    const guideRect = guideContent?.getBoundingClientRect();
+    const guideStyle = guideContent ? win.getComputedStyle(guideContent) : null;
+    // Follow the guide's visible right edge so the entire picture stays beside
+    // the menu, while retaining top-layer stacking over watch-page content.
+    left =
+      guideRect &&
+      guideRect.width > 0 &&
+      guideRect.height > 0 &&
+      guideRect.left <= 12 &&
+      guideRect.top <= top &&
+      guideRect.bottom > top &&
+      guideStyle?.display !== "none" &&
+      guideStyle?.visibility !== "hidden"
+        ? Math.max(12, guideRect.right + 12)
+        : 12;
+    videoRule.style.setProperty("left", `${left}px`, "important");
     const rect = movie?.getBoundingClientRect();
     active = !!(
       enabled &&
@@ -158,10 +185,15 @@ export function createMiniPlayer(
       restorePopover = undefined;
     }
     emit();
+    if (active && win.performance.now() < guideMotionUntil) schedule();
   }
   function schedule() {
     if (!frame && !disposed) frame = win.requestAnimationFrame(update);
   }
+  const guideTransitionFinished = (event: Event) => {
+    if (event.target instanceof Element && event.target.closest("#guide"))
+      schedule();
+  };
   const startNavigation = () => {
     navigating = true;
     restore();
@@ -172,7 +204,28 @@ export function createMiniPlayer(
     update();
   };
   const mutations = new MutationObserver((records) => {
+    const guideChanged = records.some(
+      (record) =>
+        record.target instanceof Element &&
+        record.target.matches("#guide, #guide-content"),
+    );
+    if (guideChanged) {
+      const guide = doc.querySelector("#guide");
+      const durations = guide
+        ? win.getComputedStyle(guide).transitionDuration.split(",")
+        : [];
+      const duration = Math.max(
+        200,
+        ...durations.map(
+          (value) =>
+            parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1000) || 0,
+        ),
+      );
+      // Track transforms during the native drawer animation, not just its size.
+      guideMotionUntil = win.performance.now() + duration + 50;
+    }
     if (
+      guideChanged ||
       records.some(
         (record) =>
           record.type === "childList" ||
@@ -186,11 +239,13 @@ export function createMiniPlayer(
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["style", "class", "hidden"],
+    attributeFilter: ["style", "class", "hidden", "opened", "persistent"],
   });
   doc.addEventListener("yt-navigate-start", startNavigation);
   doc.addEventListener("yt-navigate-finish", finishNavigation);
   doc.addEventListener("fullscreenchange", update);
+  doc.addEventListener("transitionend", guideTransitionFinished, true);
+  doc.addEventListener("transitioncancel", guideTransitionFinished, true);
   win.addEventListener("scroll", schedule, true);
   win.addEventListener("resize", schedule);
   win.addEventListener("popstate", finishNavigation);
@@ -226,6 +281,12 @@ export function createMiniPlayer(
       doc.removeEventListener("yt-navigate-start", startNavigation);
       doc.removeEventListener("yt-navigate-finish", finishNavigation);
       doc.removeEventListener("fullscreenchange", update);
+      doc.removeEventListener("transitionend", guideTransitionFinished, true);
+      doc.removeEventListener(
+        "transitioncancel",
+        guideTransitionFinished,
+        true,
+      );
       win.removeEventListener("scroll", schedule, true);
       win.removeEventListener("resize", schedule);
       win.removeEventListener("popstate", finishNavigation);
