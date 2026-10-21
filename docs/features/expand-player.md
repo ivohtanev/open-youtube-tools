@@ -6,7 +6,7 @@ Implemented with automated geometry, lifecycle and toolbar tests. The original i
 
 ## User behavior
 
-The toolbar button immediately toggles between Expand video and Shrink video, with an accessible pressed state. Expansion makes the player stage span the available page width. Native controls span this stage with their usual 12px side insets, even when the picture is narrower. The picture fits its original intrinsic aspect ratio inside the stage and viewport height, reserving the masthead height and 44px for the toolbar. Until metadata is available, sizing uses 16:9 and updates on metadata or intrinsic-size changes. Portrait and ultrawide pictures remain uncropped. Shrink restores YouTube's own layout.
+The toolbar button immediately toggles between Expand video and Shrink video, with an accessible pressed state. Expansion makes the player stage span the available page width. Native controls span this stage with their usual 12px side insets, even when the picture is narrower. The stage fills the entire viewport height below the YouTube masthead. The picture uses object-fit containment to fill as much of that stage as its original aspect ratio permits, without cropping. Our toolbar overlays the top-right of the stage and reserves no space; native controls remain at its bottom. Media dimensions are handled by the browser without a temporary 16:9 sizing assumption. Portrait and ultrawide pictures remain uncropped. Shrink restores YouTube's own layout.
 
 The primary content becomes full width and the secondary column follows it in normal document flow. Known side-rail hosts lose fixed positioning. This does not modify YouTube experiment flags or require Brave filters. It does not hide recommendations or reparent the video.
 
@@ -24,10 +24,10 @@ Viewport resize, masthead resize, intrinsic video resize, metadata, DOM replacem
 
 ## Tests and manual acceptance
 
-Automated tests cover width/height bounds across landscape, portrait, square and ultrawide ratios, masthead/toolbar allowance, original inline styles and video identity, toggling, route changes, video replacement, fullscreen, button accessibility, tool disablement and disposal.
+Automated tests cover full stage height below the masthead across media changes, toolbar overlay/restoration without reserved height, original inline styles and video identity, toggling, route changes, video replacement, fullscreen, button accessibility, tool disablement and disposal.
 
 Before accepting, reload the built extension and watch tab. Check normal and theater layouts, a short viewport, portrait/ultrawide videos, live streams, resize, fullscreen/PiP, scroll mini player, native controls/captions, SPA navigation and hide/re-enable through Functions. Check secondary content remains accessible below primary content. Repeat with Brave's experiment-disabling and side-rail-hiding custom filters disabled, recording the observed layout and browser version. Do not infer experiment coverage from a classic-layout pass.
 
 ## Known limitations
 
-YouTube may introduce new wrappers or independently scrolling panels that need additional selectors. Known grid/fixed-panel styles are addressed by scoped overrides rather than private experiment configuration. Unknown metadata temporarily uses a 16:9 frame with contained picture. Recommendations follow all primary content, including comments, rather than being moved directly after the player.
+YouTube may introduce new wrappers or independently scrolling panels that need additional selectors. Known grid/fixed-panel styles are addressed by scoped overrides rather than private experiment configuration. Aspect-ratio differences produce empty space on one axis; filling both axes with picture would require cropping or distortion. Recommendations follow all primary content, including comments, rather than being moved directly after the player.

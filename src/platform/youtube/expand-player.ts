@@ -1,12 +1,6 @@
 import type { ExpandPlayerPort } from "../../core/contracts";
 import { findVideo } from "./player";
 
-/** Fit the original picture within the viewport, reserving header and toolbar space. */
-export function expandedSize(width: number, height: number, ratio: number) {
-  const w = Math.max(0, Math.min(width, height * ratio));
-  return { width: w, height: w / ratio };
-}
-
 export function createExpandPlayer(
   doc: Document,
 ): ExpandPlayerPort & { dispose(): void } {
@@ -131,21 +125,13 @@ export function createExpandPlayer(
         "#masthead-container, ytd-masthead",
       );
       const headerHeight = header?.getBoundingClientRect().height ?? 0;
-      const viewportWidth = Math.min(
-        doc.documentElement.clientWidth || win.innerWidth,
-        watch.getBoundingClientRect().width || win.innerWidth,
-      );
       const viewportHeight = win.visualViewport?.height ?? win.innerHeight;
-      const ratio =
-        video.videoWidth > 0 && video.videoHeight > 0
-          ? video.videoWidth / video.videoHeight
-          : 16 / 9;
-      const size = expandedSize(
-        viewportWidth,
-        Math.max(0, viewportHeight - headerHeight - 44),
-        ratio,
+      // Let object-fit contain maximize the original picture inside the whole
+      // stage. Only the masthead occupies space outside this stage.
+      sizing.setProperty(
+        "--oyt-expanded-height",
+        `${Math.max(0, viewportHeight - headerHeight)}px`,
       );
-      sizing.setProperty("--oyt-expanded-height", `${size.height}px`);
       if (observedHeader !== header) {
         if (observedHeader) resize?.unobserve(observedHeader);
         observedHeader = header;

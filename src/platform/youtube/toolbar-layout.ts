@@ -20,6 +20,7 @@ export function positionToolbar(
     const watch = document.querySelector("ytd-watch-flexy");
     const fullscreen = document.fullscreenElement;
     const theater = watch?.hasAttribute("theater") ?? false;
+    const expanded = watch?.hasAttribute("data-oyt-expanded") ?? false;
     if (movie !== observed) {
       resize?.disconnect();
       if (movie) resize?.observe(movie);
@@ -41,29 +42,46 @@ export function positionToolbar(
     host.style.setProperty("display", "block", "important");
     host.style.setProperty(
       "--oyt-host-height",
-      position === "player" && !fullscreenPlayer && !!anchor && !toolbar.hidden
+      position === "player" &&
+        !fullscreenPlayer &&
+        !expanded &&
+        !!anchor &&
+        !toolbar.hidden
         ? "44px"
         : "0px",
       "important",
     );
-    const bottom = position === "bottom" || fullscreenPlayer;
+    const expandedOverlay = expanded && !fullscreenPlayer;
+    const bottom =
+      (!expandedOverlay && position === "bottom") || fullscreenPlayer;
     toolbar.dataset.placement = bottom ? "bottom" : "player";
     toolbar.dataset.fullscreen = String(fullscreenPlayer);
+    toolbar.dataset.expanded = String(expandedOverlay);
     const hiddenControls =
       fullscreenPlayer && !!movie?.classList.contains("ytp-autohide");
     toolbar.dataset.controlsHidden = String(hiddenControls);
     toolbar.inert = hiddenControls;
     const rect = movie?.getBoundingClientRect();
     Object.assign(toolbar.style, {
-      top: bottom ? "auto" : `${rect?.bottom ?? 0}px`,
+      top: expandedOverlay
+        ? `${Math.max(0, rect?.top ?? 0)}px`
+        : bottom
+          ? "auto"
+          : `${rect?.bottom ?? 0}px`,
       bottom: bottom ? "0px" : "auto",
-      left:
-        bottom || theater
+      right: expandedOverlay ? "12px" : "auto",
+      left: expandedOverlay
+        ? "auto"
+        : bottom || theater
           ? `${fullscreenPlayer && rect ? rect.left + rect.width / 2 : theater && !bottom && rect ? rect.left + rect.width / 2 : innerWidth / 2}px`
           : `${Math.max(0, rect?.left ?? 0)}px`,
-      transform: bottom || theater ? "translateX(-50%)" : "none",
+      transform:
+        !expandedOverlay && (bottom || theater) ? "translateX(-50%)" : "none",
       visibility:
-        !bottom && (!rect || rect.bottom < 0 || rect.bottom > innerHeight)
+        !bottom &&
+        (!rect ||
+          rect.bottom < 0 ||
+          (!expandedOverlay && rect.bottom > innerHeight))
           ? "hidden"
           : "",
     });
@@ -86,7 +104,7 @@ export function positionToolbar(
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ["class", "theater", "hidden"],
+    attributeFilter: ["class", "theater", "hidden", "data-oyt-expanded"],
   });
   document.addEventListener("fullscreenchange", schedule);
   document.addEventListener("yt-navigate-finish", schedule);

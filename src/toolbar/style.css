@@ -25,7 +25,8 @@
 .oyt-toolbar[data-placement="bottom"] {
   border-radius: 18px 18px 0 0;
 }
-.oyt-toolbar[data-fullscreen="true"] {
+.oyt-toolbar[data-fullscreen="true"],
+.oyt-toolbar[data-expanded="true"] {
   background: rgb(39 39 39 / 80%);
 }
 .oyt-toolbar[data-controls-hidden="true"] {

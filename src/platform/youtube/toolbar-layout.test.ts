@@ -45,5 +45,19 @@ it("docks to the player, centers theater, persists selection through fullscreen 
   layout.setPosition("player");
   expect(toolbar.dataset.placement).toBe("player");
   expect(toolbar.inert).toBe(false);
+  document
+    .querySelector("ytd-watch-flexy")!
+    .setAttribute("data-oyt-expanded", "");
+  layout.setPosition("player");
+  expect(toolbar.style.top).toBe("0px");
+  expect(toolbar.style.right).toBe("12px");
+  expect(toolbar.style.left).toBe("auto");
+  expect(host.style.getPropertyValue("--oyt-host-height")).toBe("0px");
+  document
+    .querySelector("ytd-watch-flexy")!
+    .removeAttribute("data-oyt-expanded");
+  layout.setPosition("player");
+  expect(toolbar.style.top).toBe("500px");
+  expect(toolbar.style.right).toBe("auto");
   layout.dispose();
 });

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createExpandPlayer, expandedSize } from "./expand-player";
+import { createExpandPlayer } from "./expand-player";
 import { expandPlayer } from "../../features/expand-player";
 
 describe("expanded watch player", () => {
@@ -23,19 +23,6 @@ describe("expanded watch player", () => {
     document.body.replaceChildren();
     vi.restoreAllMocks();
   });
-  it("fits landscape, portrait and ultrawide pictures without cropping", () => {
-    for (const ratio of [16 / 9, 9 / 16, 21 / 9, 1]) {
-      const size = expandedSize(1280, 620, ratio);
-      expect(size.width).toBeLessThanOrEqual(1280);
-      expect(size.height).toBeLessThanOrEqual(620);
-      expect(size.width / size.height).toBeCloseTo(ratio);
-    }
-    expect(expandedSize(1280, 900, 16 / 9)).toEqual({
-      width: 1280,
-      height: 720,
-    });
-    expect(expandedSize(1280, 0, 16 / 9)).toEqual({ width: 0, height: 0 });
-  });
   it("toggles the scoped layout without replacing the video or modifying native styles", () => {
     const parent = video.parentElement;
     port.toggle();
@@ -46,7 +33,7 @@ describe("expanded watch player", () => {
     expect(watch.hasAttribute("data-oyt-expanded")).toBe(false);
     expect(video.getAttribute("style")).toBe("width: 640px");
   });
-  it("reserves masthead and toolbar space and updates intrinsic aspect ratio", () => {
+  it("uses the whole viewport height below the masthead without reserving toolbar space", () => {
     vi.spyOn(
       document.querySelector("#masthead-container")!,
       "getBoundingClientRect",
@@ -57,7 +44,7 @@ describe("expanded watch player", () => {
     ).style;
     expect(
       parseFloat(sizing.getPropertyValue("--oyt-expanded-height")),
-    ).toBeLessThanOrEqual(innerHeight - 100);
+    ).toBeCloseTo(innerHeight - 56);
     Object.defineProperties(video, {
       videoWidth: { value: 1080 },
       videoHeight: { value: 1920 },
@@ -65,7 +52,7 @@ describe("expanded watch player", () => {
     port.toggle();
     port.toggle();
     const height = parseFloat(sizing.getPropertyValue("--oyt-expanded-height"));
-    expect(height).toBeCloseTo(innerHeight - 100);
+    expect(height).toBeCloseTo(innerHeight - 56);
   });
   it("releases layout on navigation and follows replacement videos", async () => {
     port.toggle();
@@ -90,7 +77,7 @@ describe("expanded watch player", () => {
     window.removeEventListener("resize", onResize);
     expect(layouts).toEqual([true, false]);
   });
-  it("updates the fitted height on intrinsic video resize without another click", async () => {
+  it("retains the full stage height for ultrawide media", async () => {
     vi.useFakeTimers();
     port.toggle();
     Object.defineProperties(video, {
@@ -104,7 +91,7 @@ describe("expanded watch player", () => {
     ).style;
     expect(
       parseFloat(sizing.getPropertyValue("--oyt-expanded-height")),
-    ).toBeCloseTo(innerWidth / 4);
+    ).toBeCloseTo(innerHeight);
     vi.useRealTimers();
   });
   it("suspends for fullscreen and restores after leaving", () => {
