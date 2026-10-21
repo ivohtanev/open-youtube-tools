@@ -21,10 +21,19 @@ export function createPlayer(doc: Document): PlayerPort & { dispose(): void } {
     const bezel = layer?.querySelector<HTMLElement>(".ytp-bezel");
     if (!text || !layer || !bezel) return;
     const previousText = text.textContent;
+    const wrapper = text.parentElement!;
+    const animation = wrapper.style.getPropertyValue("animation");
+    const animationPriority = wrapper.style.getPropertyPriority("animation");
+    const opacity = wrapper.style.getPropertyValue("opacity");
+    const opacityPriority = wrapper.style.getPropertyPriority("opacity");
     const previousBezelDisplay = bezel.style.display;
     const textHidden = layer.classList.contains("ytp-bezel-text-hide");
     const label = `${rate}x`;
     text.textContent = label;
+    // Modern YouTube independently fades this wrapper to opacity 0 with a
+    // forwards-filled CSS animation, even while its parent remains visible.
+    wrapper.style.setProperty("animation", "none");
+    wrapper.style.setProperty("opacity", "1");
     // The last native icon may be pause, volume, etc.; show only the speed text.
     bezel.style.display = "none";
     layer.classList.remove("ytp-bezel-text-hide");
@@ -44,6 +53,16 @@ export function createPlayer(doc: Document): PlayerPort & { dispose(): void } {
     const clear = () => {
       clearTimeout(timer);
       visibility.disconnect();
+      if (wrapper.style.animation === "none") {
+        if (animation)
+          wrapper.style.setProperty("animation", animation, animationPriority);
+        else wrapper.style.removeProperty("animation");
+      }
+      if (wrapper.style.opacity === "1") {
+        if (opacity)
+          wrapper.style.setProperty("opacity", opacity, opacityPriority);
+        else wrapper.style.removeProperty("opacity");
+      }
       // A native action may have taken ownership of the same notification.
       if (text.textContent === label && bezel.style.display === "none") {
         text.textContent = previousText;

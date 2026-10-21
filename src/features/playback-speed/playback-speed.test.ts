@@ -163,7 +163,7 @@ it("uses 0.02 wheel steps in both directions and keeps zoom and boundaries", () 
   player.dispose();
 });
 
-it("keeps the native notice visible for every wheel tick despite an earlier YouTube hide timer", async () => {
+it("keeps the native notice visible for every wheel tick despite native hide timers and a forwards-filled text fade", async () => {
   vi.useFakeTimers();
   history.replaceState(null, "", "/watch?v=test");
   document.body.innerHTML =
@@ -174,7 +174,10 @@ it("keeps the native notice visible for every wheel tick despite an earlier YouT
     '[aria-label="Change Speed with Scroll"]',
   )!;
   const text = document.querySelector<HTMLElement>(".ytp-bezel-text")!;
-  const layer = text.parentElement!.parentElement!;
+  const wrapper = text.parentElement!;
+  wrapper.style.animation = "native-fade 1s forwards";
+  wrapper.style.opacity = "0";
+  const layer = wrapper.parentElement!;
   const tick = () =>
     trigger.dispatchEvent(
       new WheelEvent("wheel", { deltaY: -1, cancelable: true }),
@@ -190,12 +193,16 @@ it("keeps the native notice visible for every wheel tick despite an earlier YouT
       expect(text.textContent).toBe(player.snapshot().playbackRate + "x");
       await vi.advanceTimersByTimeAsync(400);
       expect(layer.style.display).toBe("block");
+      expect(wrapper.style.animation).toBe("none");
+      expect(wrapper.style.opacity).toBe("1");
       expect(layer.classList.contains("ytp-bezel-text-hide")).toBe(false);
     }
     await vi.advanceTimersByTimeAsync(249);
     expect(layer.style.display).toBe("block");
     await vi.advanceTimersByTimeAsync(1);
     expect(layer.style.display).toBe("none");
+    expect(wrapper.style.animation).toBe("native-fade 1s forwards");
+    expect(wrapper.style.opacity).toBe("0");
     player.setPlaybackRate(2);
     await vi.advanceTimersByTimeAsync(400);
     tick();
