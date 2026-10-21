@@ -16,6 +16,10 @@ Read this index before changing architecture or adding a feature.
 | [Testing](testing.md)                                            | Automated coverage and manual compatibility matrix       |
 | [Development workflow](development-workflow.md)                  | Task isolation, branches and owner-only merge rules      |
 
+## Research reports
+
+- [YouTube player APIs and feature opportunities](research/youtube-player-api-and-feature-opportunities.md): player control surfaces, brightness and filters, browser/YouTube APIs, feature priorities and final summary.
+
 ## Documentation rules
 
 - Write documentation and code comments in English.
