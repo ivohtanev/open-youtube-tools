@@ -8,6 +8,9 @@ export function mountMiniPlayer(
   const overlay = document.createElement("section");
   overlay.className = "oyt-mini-player";
   overlay.setAttribute("aria-label", "Mini player");
+  const useTopLayer = typeof overlay.showPopover === "function";
+  if (useTopLayer) overlay.setAttribute("popover", "manual");
+  let showing = false;
   const toggle = iconButton("Play", "");
   toggle.classList.add("mini-player-toggle");
   toggle.onclick = () => player.togglePlayback();
@@ -34,6 +37,11 @@ export function mountMiniPlayer(
   const unsubscribe = player.subscribe(
     ({ active, top, paused, progress: value }) => {
       overlay.hidden = !active;
+      if (useTopLayer && active !== showing) {
+        if (active) overlay.showPopover();
+        else overlay.hidePopover();
+      }
+      showing = active;
       overlay.style.top = `${top}px`;
       toggle.setAttribute("aria-label", paused ? "Play" : "Pause");
       toggle.querySelector("svg")!.innerHTML = paused
@@ -45,6 +53,7 @@ export function mountMiniPlayer(
   );
   return () => {
     unsubscribe();
+    if (useTopLayer && showing) overlay.hidePopover();
     overlay.remove();
   };
 }

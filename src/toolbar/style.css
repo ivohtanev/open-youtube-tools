@@ -228,6 +228,13 @@ button:disabled {
   z-index: 2147483645;
   top: 12px;
   left: 12px;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
   width: 25vw;
   aspect-ratio: 16 / 9;
   color: #fff;

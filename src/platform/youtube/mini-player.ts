@@ -16,15 +16,11 @@ export function createMiniPlayer(
   let active = false;
   let top = 12;
   let header: HTMLElement | null = null;
-  const layers = new Set<HTMLElement>();
+  let restorePopover: (() => void) | undefined;
   const listeners = new Set<(state: MiniPlayerSnapshot) => void>();
   const style = doc.createElement("style");
   // Important rules override YouTube's inline sizing without changing its values.
   style.textContent = `
-    [data-oyt-mini-player-layer] {
-      overflow: visible !important;
-      opacity: 1 !important;
-    }
     #movie_player[data-oyt-mini-player-active] {
       z-index: 2147483644 !important;
     }
@@ -41,6 +37,8 @@ export function createMiniPlayer(
       max-width: none !important;
       max-height: none !important;
       margin: 0 !important;
+      border: 0 !important;
+      padding: 0 !important;
       transform: none !important;
       object-fit: contain !important;
       background: #000 !important;
@@ -51,7 +49,7 @@ export function createMiniPlayer(
     }
   `;
   doc.head.append(style);
-  const videoRule = style.sheet!.cssRules[2] as CSSStyleRule;
+  const videoRule = style.sheet!.cssRules[1] as CSSStyleRule;
   const snapshot = (): MiniPlayerSnapshot => ({
     active,
     top,
@@ -63,12 +61,10 @@ export function createMiniPlayer(
   });
   const emit = () => listeners.forEach((listener) => listener(snapshot()));
   const restore = () => {
+    restorePopover?.();
+    restorePopover = undefined;
     video?.removeAttribute("data-oyt-mini-player");
     movie?.removeAttribute("data-oyt-mini-player-active");
-    layers.forEach((layer) =>
-      layer.removeAttribute("data-oyt-mini-player-layer"),
-    );
-    layers.clear();
     active = false;
   };
   const mediaEvents = [
@@ -140,23 +136,26 @@ export function createMiniPlayer(
     );
     video?.toggleAttribute("data-oyt-mini-player", active);
     movie?.toggleAttribute("data-oyt-mini-player-active", active);
-    if (active) {
-      // Fixed video layers must escape every native clipping wrapper, while
-      // retaining their DOM parent so native playback ownership is preserved.
-      for (
-        let layer = video?.parentElement;
-        layer && layer !== doc.body;
-        layer = layer.parentElement
-      ) {
-        layer.setAttribute("data-oyt-mini-player-layer", "");
-        layers.add(layer);
-        if (layer.matches("ytd-watch-flexy")) break;
-      }
-    } else {
-      layers.forEach((layer) =>
-        layer.removeAttribute("data-oyt-mini-player-layer"),
-      );
-      layers.clear();
+    if (
+      active &&
+      video &&
+      !restorePopover &&
+      typeof video.showPopover === "function"
+    ) {
+      // The top layer escapes native stacking contexts without reparenting the
+      // video. Controls enter it after the picture, preserving their ordering.
+      const target = video;
+      const original = target.getAttribute("popover");
+      target.setAttribute("popover", "manual");
+      target.showPopover();
+      restorePopover = () => {
+        target.hidePopover();
+        if (original === null) target.removeAttribute("popover");
+        else target.setAttribute("popover", original);
+      };
+    } else if (!active) {
+      restorePopover?.();
+      restorePopover = undefined;
     }
     emit();
   }

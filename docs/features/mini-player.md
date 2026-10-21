@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented as the second feature. Automated lifecycle tests pass. The rebuilt extension was reloaded in Brave and its corrected opacity, masthead offset, hover controls and scroll restoration were verified on live YouTube on 2026-10-21. The remaining compatibility cases below are still pending.
+Implemented as the second feature. Automated lifecycle tests pass. The rebuilt extension was reloaded in Brave and its stacking above actual comments/avatars, masthead offset, hover controls and scroll restoration were verified on live YouTube on 2026-10-21. The remaining compatibility cases below are still pending.
 
 ## User behavior
 
@@ -18,7 +18,7 @@ The same video remains inside YouTube's player. Fixed-position CSS changes its p
 
 ## Contracts and dependencies
 
-`MiniPlayerPort` exposes enablement, playback toggling and snapshots containing active/paused/progress state and the shared top offset. `platform/youtube/mini-player.ts` owns discovery, masthead geometry, events and a removable scoped stylesheet. CSSOM updates share the video offset without overwriting native inline styles. While floating, scoped attributes release clipping and opacity on the video's native wrappers up to the watch root; video opacity and normal blending are enforced. Restoration removes those attributes and restores the native styles automatically.
+`MiniPlayerPort` exposes enablement, playback toggling and snapshots containing active/paused/progress state and the shared top offset. `platform/youtube/mini-player.ts` owns discovery, masthead geometry, events and a removable scoped stylesheet. CSSOM updates share the video offset without overwriting native inline styles. In current Chromium, the existing video enters the browser's top layer as a manual non-modal popover, followed by its controls. This bypasses native stacking and clipping contexts without moving the video in the DOM or modifying ancestor styles. Restoration hides the video popover and restores its original attribute. The overlay leaves the top layer when inactive or unmounted. Browsers without the Popover API retain ordinary fixed positioning, which does not guarantee stacking over native site content.
 
 `features/mini-player/index.ts` renders controls through the port. The entry point creates a separate body-anchored shadow UI so toolbar docking/fullscreen hosting cannot move the mini overlay. The toolbar supplies the setting; the entry point owns persistence.
 
@@ -30,12 +30,12 @@ Scroll and resize work is coalesced with animation frames. Resize and DOM observ
 
 DOM tests cover visibility boundaries, original inline styles, one retained video, time/speed continuity, enablement, native playback events, finite/infinite progress, replacement with and without navigation, route exclusion, fullscreen/PiP, setting states, coalescing and active disposal.
 
-The initial Brave fixture used a moving canvas stream and real scrolling with the site's observed stacking/overflow structure. At a 1536px viewport, the floating video measured 384 × 216px at (12, 12); one video remained playing. Play/Pause, scroll restoration, settings navigation and preference restoration through fixture-local storage were exercised. This original fixture predates the masthead offset and hover fixes and does not validate them. Regression tests now cover masthead height/visibility changes, shared video/control offsets, activation behind the header and restoration of native clipping/opacity. Browser verification of the corrected presentation is recorded in the PR.
+The initial Brave fixture used a moving canvas stream and real scrolling with the site's observed stacking/overflow structure. At a 1536px viewport, the floating video measured 384 × 216px at (12, 12); one video remained playing. Play/Pause, scroll restoration, settings navigation and preference restoration through fixture-local storage were exercised. This original fixture predates the masthead offset and hover fixes and does not validate them. Regression tests now cover masthead height/visibility changes, shared video/control offsets, activation behind the header, unchanged native wrapper styles, video-before-controls top-layer ordering and popover cleanup/attribute restoration. Browser verification of corrected stacking is recorded below.
 
 Before marking ready, reload the extension and a YouTube watch tab. Check normal/theater mode, scrolling while playing and paused, portrait videos, progress on a finite clip, disabling/re-enabling, preference restoration, navigation/replacement, fullscreen/PiP and continued speed controls. Record browser version and console errors.
 
-Live verification after the presentation fixes: the masthead measured 56px; the video and overlay both started at (12, 68) and measured 338 × 190.125px in a 1352px-wide viewport. Video opacity was 1, and the picture no longer showed underlying page comments. The button's opacity was 0 away from the mini player, 1 while hovered, then 0 after leaving, with a 0.18s transition. Scrolling back restored the main picture and removed all temporary ancestor attributes. The browser version and remaining compatibility cases were not recorded.
+Live verification after the stacking fix: the rebuilt extension was reloaded and tested with comments, avatar images and comment text geometrically overlapping the mini player. The video and overlay both matched `:popover-open`; page content remained behind the picture. Both started at (12, 68) and measured 338 × 190.125px in a 1352px viewport, below the 56px masthead. One video remained, the hover button was visible and Play/Pause worked. Scrolling up closed both top-layer presentations, removed the temporary video popover attribute and continued playback in the original player. The earlier hover check also measured opacity 0 → 1 → 0 with a 0.18s transition. The browser version and remaining compatibility cases were not recorded. The earlier opacity-only verification did not establish correct stacking over comments and is superseded by this targeted overlap check.
 
 ## Known limitations
 
-YouTube selectors, stacking and navigation events are undocumented. Layout variants with transformed/clipping ancestors may require adapter changes. Ads sharing the main video follow the same behavior. Infinite-duration streams have no finite progress indication. A fixed 25% width leaves limited room for controls on very narrow windows.
+YouTube selectors and navigation events are undocumented. Correct stacking requires the Popover API in the target Chromium browser. Ads sharing the main video follow the same behavior. Infinite-duration streams have no finite progress indication. A fixed 25% width leaves limited room for controls on very narrow windows.

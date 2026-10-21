@@ -161,17 +161,16 @@ it("keeps video and controls 12px below the measured header and follows header c
   f.dispose();
 });
 
-it("releases native clipping/opacity only while floating and restores every wrapper", () => {
+it("leaves native wrapper clipping and opacity untouched while floating", () => {
   const f = setup();
   const wrapper = f.video.parentElement!;
   wrapper.style.opacity = "0.4";
   wrapper.style.overflow = "hidden";
   const originalStyle = wrapper.getAttribute("style");
   f.move(-10);
-  expect(wrapper.hasAttribute("data-oyt-mini-player-layer")).toBe(true);
-  expect(f.movie.hasAttribute("data-oyt-mini-player-layer")).toBe(true);
-  expect(getComputedStyle(wrapper).opacity).toBe("1");
-  expect(getComputedStyle(wrapper).overflow).toBe("visible");
+  expect(wrapper.getAttribute("style")).toBe(originalStyle);
+  expect(getComputedStyle(wrapper).opacity).toBe("0.4");
+  expect(getComputedStyle(wrapper).overflow).toBe("hidden");
   f.move(1);
   expect(document.querySelector("[data-oyt-mini-player-layer]")).toBeNull();
   expect(wrapper.getAttribute("style")).toBe(originalStyle);
@@ -180,6 +179,59 @@ it("releases native clipping/opacity only while floating and restores every wrap
   f.dispose();
   expect(document.querySelector("[data-oyt-mini-player-layer]")).toBeNull();
   expect(wrapper.getAttribute("style")).toBe(originalStyle);
+});
+
+it("promotes the same video before its controls and releases both top-layer presentations", () => {
+  const shown: HTMLElement[] = [];
+  const hidden: HTMLElement[] = [];
+  const previousShow = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    "showPopover",
+  );
+  const previousHide = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    "hidePopover",
+  );
+  Object.defineProperty(HTMLElement.prototype, "showPopover", {
+    configurable: true,
+    value(this: HTMLElement) {
+      shown.push(this);
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, "hidePopover", {
+    configurable: true,
+    value(this: HTMLElement) {
+      hidden.push(this);
+    },
+  });
+  const f = setup();
+  const overlay = f.container.querySelector<HTMLElement>("section")!;
+  try {
+    f.video.setAttribute("popover", "auto");
+    const parent = f.video.parentElement;
+    f.move(-10);
+    expect(shown).toEqual([f.video, overlay]);
+    expect(f.video.getAttribute("popover")).toBe("manual");
+    expect(f.video.parentElement).toBe(parent);
+    f.player.setEnabled(true);
+    expect(shown).toHaveLength(2);
+    f.player.setEnabled(false);
+    expect(hidden).toEqual([f.video, overlay]);
+    expect(f.video.getAttribute("popover")).toBe("auto");
+    f.video.removeAttribute("popover");
+    f.player.setEnabled(true);
+    f.dispose();
+    expect(hidden).toHaveLength(4);
+    expect(f.video.hasAttribute("popover")).toBe(false);
+  } finally {
+    f.dispose();
+    if (previousShow)
+      Object.defineProperty(HTMLElement.prototype, "showPopover", previousShow);
+    else Reflect.deleteProperty(HTMLElement.prototype, "showPopover");
+    if (previousHide)
+      Object.defineProperty(HTMLElement.prototype, "hidePopover", previousHide);
+    else Reflect.deleteProperty(HTMLElement.prototype, "hidePopover");
+  }
 });
 
 it("restores on navigation, follows replacements, and leaves other routes untouched", () => {
