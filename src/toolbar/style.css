@@ -156,3 +156,73 @@ button:disabled {
     transition: none !important;
   }
 }
+
+/* Floating UI's arrow middleware positions this pointer after flip and shift. */
+.popover {
+  overflow: visible;
+}
+.popover-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #272727;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.popover-arrow[data-side="bottom"] {
+  border-top: 1px solid #484848;
+  border-left: 1px solid #484848;
+}
+.popover-arrow[data-side="top"] {
+  border-bottom: 1px solid #484848;
+  border-right: 1px solid #484848;
+}
+.popover-arrow[data-side="left"] {
+  border-top: 1px solid #484848;
+  border-right: 1px solid #484848;
+}
+.popover-arrow[data-side="right"] {
+  border-bottom: 1px solid #484848;
+  border-left: 1px solid #484848;
+}
+.icon-button[aria-haspopup] {
+  position: relative;
+}
+.icon-button[aria-haspopup]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0;
+  transform: translateY(-5px) rotate(45deg);
+  transition:
+    opacity 120ms ease-out,
+    transform 120ms ease-out;
+  pointer-events: none;
+}
+.icon-button[aria-haspopup]:hover:not(:disabled)::after,
+.icon-button[aria-haspopup]:focus-visible::after {
+  opacity: 0.8;
+  transform: translateY(0) rotate(45deg);
+}
+.function-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.function-option:hover {
+  background: #ffffff18;
+}
+.function-option svg {
+  width: 20px;
+  height: 20px;
+}
+.function-option input {
+  accent-color: #a6e3c0;
+}

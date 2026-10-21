@@ -2,7 +2,7 @@
 
 ## Implemented foundation
 
-Open YouTube Tools is a Manifest V3 content-script extension for desktop Chromium browsers. The toolbar attaches to the video by default, offers viewport-bottom docking and provides expandable playback speed controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code, account integration, or background worker. Extension-local storage saves toolbar position.
+Open YouTube Tools is a Manifest V3 content-script extension for desktop Chromium browsers. The toolbar attaches to the video by default, offers viewport-bottom docking and provides expandable playback speed controls on regular YouTube watch pages. All code runs locally; there is no backend, telemetry, remote code, account integration, or background worker. Extension-local storage saves toolbar position and disabled functions.
 
 ```text
 src/

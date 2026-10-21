@@ -15,7 +15,7 @@ export default defineContentScript({
     const player = createPlayer(document);
     ctx.onInvalidated(() => player.dispose());
     const saved = await browser.storage.local
-      .get("toolbarPosition")
+      .get(["toolbarPosition", "hiddenTools"])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
     const ui = await createShadowRootUi(ctx, {
@@ -31,6 +31,14 @@ export default defineContentScript({
               saved.toolbarPosition === "bottom" ? "bottom" : "player",
             ),
           position: saved.toolbarPosition === "bottom" ? "bottom" : "player",
+          hiddenTools: Array.isArray(saved.hiddenTools)
+            ? saved.hiddenTools.filter(
+                (id): id is string => typeof id === "string",
+              )
+            : [],
+          onHiddenToolsChange: (hiddenTools) => {
+            void browser.storage.local.set({ hiddenTools }).catch(console.warn);
+          },
           onPositionChange: (toolbarPosition) => {
             void browser.storage.local
               .set({ toolbarPosition })

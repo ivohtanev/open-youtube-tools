@@ -1,4 +1,5 @@
 import {
+  arrow,
   autoUpdate,
   computePosition,
   flip,
@@ -13,10 +14,14 @@ let nextId = 0;
 export function createPopover(
   trigger: HTMLButtonElement,
   panel: HTMLElement,
-  options: { hover?: boolean; placement?: () => Placement } = {},
+  options: { placement?: () => Placement } = {},
 ) {
   panel.id = `oyt-panel-${++nextId}`;
   panel.classList.add("popover");
+  const pointer = document.createElement("span");
+  pointer.className = "popover-arrow";
+  pointer.setAttribute("aria-hidden", "true");
+  panel.append(pointer);
   panel.hidden = true;
   panel.setAttribute("role", "dialog");
   panel.setAttribute(
@@ -64,10 +69,37 @@ export function createPopover(
             (trigger.closest("[data-placement='bottom']")
               ? "top-start"
               : "bottom-start"),
-          middleware: [offset(8), flip({ padding: 8 }), shift({ padding: 8 })],
-        }).then(({ x, y }) => {
+          middleware: [
+            offset(10),
+            flip({ padding: 8 }),
+            shift({ padding: 8 }),
+            arrow({ element: pointer, padding: 12 }),
+          ],
+        }).then(({ x, y, placement, middlewareData }) => {
           if (current !== generation) return;
           Object.assign(panel.style, { left: `${x}px`, top: `${y}px` });
+          const side = placement.split("-")[0] as
+            "top" | "bottom" | "left" | "right";
+          const opposite = {
+            top: "bottom",
+            bottom: "top",
+            left: "right",
+            right: "left",
+          }[side];
+          Object.assign(pointer.style, {
+            left:
+              middlewareData.arrow?.x == null
+                ? ""
+                : middlewareData.arrow.x + "px",
+            top:
+              middlewareData.arrow?.y == null
+                ? ""
+                : middlewareData.arrow.y + "px",
+            right: "",
+            bottom: "",
+          });
+          pointer.style.setProperty(opposite, "-5px");
+          pointer.dataset.side = side;
         });
       },
       {
@@ -100,14 +132,6 @@ export function createPopover(
     },
     { signal },
   );
-  if (options.hover) {
-    trigger.addEventListener("pointerenter", open, { signal });
-    trigger.addEventListener("pointerleave", scheduleClose, { signal });
-    trigger.addEventListener("focus", open, { signal });
-    trigger.addEventListener("focusout", scheduleClose, { signal });
-    panel.addEventListener("pointerenter", cancelClose, { signal });
-    panel.addEventListener("pointerleave", scheduleClose, { signal });
-  }
   panel.addEventListener("focusout", scheduleClose, { signal });
   document.addEventListener(
     "pointerdown",
@@ -138,6 +162,7 @@ export function createPopover(
     dispose() {
       close();
       abort.abort();
+      pointer.remove();
     },
   };
 }

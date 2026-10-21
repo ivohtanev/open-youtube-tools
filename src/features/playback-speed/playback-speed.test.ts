@@ -33,9 +33,9 @@ it("supports scroll, disclosure, boundaries, reset, route visibility and teardow
   const wheel = new WheelEvent("wheel", { deltaY: -100, cancelable: true });
   trigger.dispatchEvent(wheel);
   expect(wheel.defaultPrevented).toBe(true);
-  expect(player.snapshot().playbackRate).toBe(1.05);
+  expect(player.snapshot().playbackRate).toBe(1.3);
   faster.click();
-  expect(player.snapshot().playbackRate).toBe(1.25);
+  expect(player.snapshot().playbackRate).toBe(1.5);
   trigger.dispatchEvent(new WheelEvent("wheel", { deltaY: 1 }));
   slower.click();
   expect(player.snapshot().playbackRate).toBe(1);
@@ -62,4 +62,100 @@ it("supports scroll, disclosure, boundaries, reset, route visibility and teardow
   dispose();
   player.dispose();
   expect(container.childElementCount).toBe(0);
+});
+
+it("opens panels only on activation, and dismisses nested settings", () => {
+  history.replaceState(null, "", "/watch?v=test");
+  document.body.innerHTML =
+    '<div id="movie_player"><video class="html5-main-video"></video></div>';
+  const player = createPlayer(document);
+  const dispose = mountToolbar(document.body, player, [playbackSpeed]);
+  const trigger = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Change Speed with Scroll"]',
+  )!;
+  trigger.dispatchEvent(new Event("pointerenter"));
+  trigger.focus();
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  trigger.click();
+  expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  trigger.click();
+  const settings = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Toolbar options"]',
+  )!;
+  settings.click();
+  const position = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Position"]',
+  )!;
+  position.click();
+  expect(position.getAttribute("aria-expanded")).toBe("true");
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  expect(position.getAttribute("aria-expanded")).toBe("false");
+  expect(settings.getAttribute("aria-expanded")).toBe("true");
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  expect(settings.getAttribute("aria-expanded")).toBe("false");
+  dispose();
+  player.dispose();
+});
+
+it("restores disabled functions and mounts/unmounts them through checkboxes", () => {
+  history.replaceState(null, "", "/watch?v=test");
+  document.body.innerHTML =
+    '<div id="movie_player"><video class="html5-main-video"></video></div>';
+  const player = createPlayer(document);
+  const saved: string[][] = [];
+  const dispose = mountToolbar(document.body, player, [playbackSpeed], {
+    hiddenTools: ["playback-speed"],
+    onHiddenToolsChange: (ids) => saved.push(ids),
+  });
+  const speed = () =>
+    document.querySelector<HTMLButtonElement>(
+      '[aria-label="Change Speed with Scroll"]',
+    );
+  const checkbox = document.querySelector<HTMLInputElement>(
+    'input[type="checkbox"]',
+  )!;
+  expect(speed()).toBeNull();
+  expect(checkbox.checked).toBe(false);
+  checkbox.click();
+  expect(speed()).not.toBeNull();
+  const old = speed()!;
+  old.click();
+  checkbox.click();
+  expect(speed()).toBeNull();
+  old.click();
+  expect(old.getAttribute("aria-expanded")).toBe("false");
+  checkbox.click();
+  speed()!.dispatchEvent(new WheelEvent("wheel", { deltaY: -1 }));
+  expect(player.snapshot().playbackRate).toBe(1.3);
+  expect(saved).toEqual([[], ["playback-speed"], []]);
+  dispose();
+  player.dispose();
+});
+
+it("uses 0.3 wheel steps in both directions and keeps zoom and boundaries", () => {
+  history.replaceState(null, "", "/watch?v=test");
+  document.body.innerHTML =
+    '<div id="movie_player"><video class="html5-main-video"></video></div>';
+  const player = createPlayer(document);
+  const dispose = mountToolbar(document.body, player, [playbackSpeed]);
+  const trigger = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Change Speed with Scroll"]',
+  )!;
+  const wheel = (deltaY: number, ctrlKey = false) =>
+    trigger.dispatchEvent(
+      new WheelEvent("wheel", { deltaY, ctrlKey, cancelable: true }),
+    );
+  wheel(-1);
+  expect(player.snapshot().playbackRate).toBe(1.3);
+  wheel(1);
+  expect(player.snapshot().playbackRate).toBe(1);
+  wheel(-1, true);
+  wheel(0);
+  expect(player.snapshot().playbackRate).toBe(1);
+  for (let i = 0; i < 10; i++) wheel(-1);
+  expect(player.snapshot().playbackRate).toBe(2);
+  for (let i = 0; i < 10; i++) wheel(1);
+  expect(player.snapshot().playbackRate).toBe(0.25);
+  dispose();
+  player.dispose();
 });

@@ -4,13 +4,15 @@ The default toolbar attaches directly below the video with rounded lower corners
 
 ## Shared panels
 
-`toolbar/popover.ts` wraps `@floating-ui/dom` with `autoUpdate`, `offset`, `flip` and `shift`. Panels prefer below player docking and above bottom docking, then adapt to available viewport space. Listeners exist only while mounted; position observation exists only while open. Interactive panels use non-modal dialog semantics, native buttons, Tab navigation, ArrowDown to enter, Escape to return focus, outside-click dismissal and a short hover grace period. They are not ARIA tooltips because they contain controls.
+`toolbar/popover.ts` wraps `@floating-ui/dom` with `autoUpdate`, `offset`, `flip`, `shift` and the built-in `arrow` middleware. Panels prefer below player docking and above bottom docking, then adapt to available viewport space. Listeners exist only while mounted; position observation exists only while open. Interactive panels use non-modal dialog semantics, native buttons, Tab navigation, ArrowDown to enter, Escape to return focus, outside-click dismissal and dismissal after focus leaves the panel. They are not ARIA tooltips because they contain controls.
 
 The speed panel contains the text “Change Speed with Scroll” and an outlined chevron that slides the controls open. Reduced-motion preferences disable animation. Use this shared component for future tool panels instead of adding per-feature positioning logic.
 
-## Settings and layout
+Hover and focus do not open panels. Toolbar icons show a compact downward chevron on hover, fading to 80% opacity while sliding down over 120 ms. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
 
-The ellipsis opens a settings panel with a nested Layout category. “Attached to video” and “Bottom of screen” change position immediately. The entry point stores `toolbarPosition` in extension-local storage; invalid or missing values default to player docking. This requires the `storage` permission. Speed is not persisted. Appearance and icon-visibility categories can be added when their settings are implemented; empty categories are intentionally omitted.
+## Settings and position
+
+The ellipsis opens a settings panel with a nested Position category. “Attached to video” and “Bottom of screen” change position immediately. The entry point stores `toolbarPosition` in extension-local storage; invalid or missing values default to player docking. This requires the `storage` permission. Speed is not persisted. Functions lists each registered tool with its icon, name and checkbox. Disabling unmounts the tool and cleans up its listeners; enabling mounts it again in its original slot. The `hiddenTools` setting is saved in extension-local storage; invalid values default to all tools enabled. Settings always remain available, including when every tool is disabled.
 
 `ToolbarPosition` and `ToolbarLayout` are core contracts. The entry point injects the YouTube layout adapter into the toolbar. Only `platform/youtube/toolbar-layout.ts` owns site selectors, player geometry, theater detection and fullscreen hosting. The adapter reserves space for player docking, observes resize/layout/navigation, coalesces updates with animation frames and releases observers on disposal.
 

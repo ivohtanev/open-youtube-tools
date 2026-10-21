@@ -14,13 +14,12 @@ export function stepSpeed(rate: number, direction: number) {
 
 export const playbackSpeed: Tool = {
   id: "playback-speed",
+  name: "Playback speed",
+  icon: '<path d="M4 18a9 9 0 1 1 16 0Z"/><path d="m12 13 5-5"/><circle cx="12" cy="13" r="1"/>',
   mount(container, player) {
     const group = document.createElement("div");
     group.className = "tool";
-    const trigger = iconButton(
-      "Change Speed with Scroll",
-      '<path d="M4 18a9 9 0 1 1 16 0Z"/><path d="m12 13 5-5"/><circle cx="12" cy="13" r="1"/>',
-    );
+    const trigger = iconButton("Change Speed with Scroll", playbackSpeed.icon);
     const panel = document.createElement("div");
     const heading = document.createElement("div");
     heading.className = "panel-heading";
@@ -72,8 +71,7 @@ export const playbackSpeed: Tool = {
             2,
             Math.max(
               0.25,
-              Math.round((rate + (event.deltaY < 0 ? 0.05 : -0.05)) * 100) /
-                100,
+              Math.round((rate + (event.deltaY < 0 ? 0.3 : -0.3)) * 100) / 100,
             ),
           ),
         );
@@ -86,7 +84,7 @@ export const playbackSpeed: Tool = {
     panel.append(heading, reveal);
     group.append(trigger, panel, status);
     container.append(group);
-    const popover = createPopover(trigger, panel, { hover: true });
+    const popover = createPopover(trigger, panel);
     const unsubscribe = player.subscribe(({ available, playbackRate }) => {
       trigger.disabled = !available;
       trigger.dataset.modified = String(playbackRate !== 1);
