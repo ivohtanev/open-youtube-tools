@@ -32,8 +32,9 @@ export function mountMiniPlayer(
   }
   container.append(overlay);
   const unsubscribe = player.subscribe(
-    ({ active, paused, progress: value }) => {
+    ({ active, top, paused, progress: value }) => {
       overlay.hidden = !active;
+      overlay.style.top = `${top}px`;
       toggle.setAttribute("aria-label", paused ? "Play" : "Pause");
       toggle.querySelector("svg")!.innerHTML = paused
         ? '<path d="m9 5 11 7-11 7Z" fill="currentColor" stroke="none"/>'

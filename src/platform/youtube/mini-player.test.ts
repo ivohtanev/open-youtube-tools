@@ -121,6 +121,67 @@ it("plays/pauses the current video, tracks native events and clamps finite progr
   expect(f.container.childElementCount).toBe(0);
 });
 
+it("keeps video and controls 12px below the measured header and follows header changes", () => {
+  const f = setup();
+  const header = document.createElement("ytd-masthead");
+  document.body.prepend(header);
+  let height = 56;
+  vi.spyOn(header, "getBoundingClientRect").mockImplementation(() => ({
+    top: 0,
+    bottom: height,
+    height,
+    width: 1000,
+    left: 0,
+    right: 1000,
+    x: 0,
+    y: 0,
+    toJSON() {},
+  }));
+  f.move(57);
+  const overlay = f.container.querySelector<HTMLElement>("section")!;
+  expect(overlay.hidden).toBe(true);
+  f.move(56);
+  expect(overlay.hidden).toBe(false);
+  expect(overlay.style.top).toBe("68px");
+  const rules = [
+    ...document.querySelector("style")!.sheet!.cssRules,
+  ] as CSSStyleRule[];
+  const videoRule = rules.find((rule) => rule.selectorText.includes("video["))!;
+  expect(videoRule.style.getPropertyValue("top")).toBe("68px");
+  height = 80;
+  f.player.setEnabled(true);
+  expect(overlay.style.top).toBe("92px");
+  expect(videoRule.style.getPropertyValue("top")).toBe("92px");
+  header.hidden = true;
+  f.move(-10);
+  expect(overlay.style.top).toBe("12px");
+  header.remove();
+  f.player.setEnabled(true);
+  expect(overlay.style.top).toBe("12px");
+  f.dispose();
+});
+
+it("releases native clipping/opacity only while floating and restores every wrapper", () => {
+  const f = setup();
+  const wrapper = f.video.parentElement!;
+  wrapper.style.opacity = "0.4";
+  wrapper.style.overflow = "hidden";
+  const originalStyle = wrapper.getAttribute("style");
+  f.move(-10);
+  expect(wrapper.hasAttribute("data-oyt-mini-player-layer")).toBe(true);
+  expect(f.movie.hasAttribute("data-oyt-mini-player-layer")).toBe(true);
+  expect(getComputedStyle(wrapper).opacity).toBe("1");
+  expect(getComputedStyle(wrapper).overflow).toBe("visible");
+  f.move(1);
+  expect(document.querySelector("[data-oyt-mini-player-layer]")).toBeNull();
+  expect(wrapper.getAttribute("style")).toBe(originalStyle);
+  expect(getComputedStyle(wrapper).opacity).toBe("0.4");
+  f.move(-10);
+  f.dispose();
+  expect(document.querySelector("[data-oyt-mini-player-layer]")).toBeNull();
+  expect(wrapper.getAttribute("style")).toBe(originalStyle);
+});
+
 it("restores on navigation, follows replacements, and leaves other routes untouched", () => {
   const f = setup();
   f.move(-50);

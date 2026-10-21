@@ -25,6 +25,7 @@ export interface ToolbarLayout {
 
 export interface MiniPlayerSnapshot {
   active: boolean;
+  top: number;
   paused: boolean;
   progress: number;
 }

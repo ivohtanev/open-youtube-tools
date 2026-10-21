@@ -14,10 +14,17 @@ export function createMiniPlayer(
   let video: HTMLVideoElement | null = null;
   let movie: HTMLElement | null = null;
   let active = false;
+  let top = 12;
+  let header: HTMLElement | null = null;
+  const layers = new Set<HTMLElement>();
   const listeners = new Set<(state: MiniPlayerSnapshot) => void>();
   const style = doc.createElement("style");
   // Important rules override YouTube's inline sizing without changing its values.
   style.textContent = `
+    [data-oyt-mini-player-layer] {
+      overflow: visible !important;
+      opacity: 1 !important;
+    }
     #movie_player[data-oyt-mini-player-active] {
       z-index: 2147483644 !important;
     }
@@ -37,13 +44,17 @@ export function createMiniPlayer(
       transform: none !important;
       object-fit: contain !important;
       background: #000 !important;
+      opacity: 1 !important;
+      mix-blend-mode: normal !important;
       z-index: 2147483644 !important;
       pointer-events: none !important;
     }
   `;
   doc.head.append(style);
+  const videoRule = style.sheet!.cssRules[2] as CSSStyleRule;
   const snapshot = (): MiniPlayerSnapshot => ({
     active,
+    top,
     paused: video?.paused ?? true,
     progress:
       video && Number.isFinite(video.duration) && video.duration > 0
@@ -54,6 +65,10 @@ export function createMiniPlayer(
   const restore = () => {
     video?.removeAttribute("data-oyt-mini-player");
     movie?.removeAttribute("data-oyt-mini-player-active");
+    layers.forEach((layer) =>
+      layer.removeAttribute("data-oyt-mini-player-layer"),
+    );
+    layers.clear();
     active = false;
   };
   const mediaEvents = [
@@ -85,7 +100,30 @@ export function createMiniPlayer(
       video?.addEventListener("leavepictureinpicture", update);
       resize?.disconnect();
       if (movie) resize?.observe(movie);
+      if (header) resize?.observe(header);
     }
+    const nextHeader = doc.querySelector<HTMLElement>(
+      "#masthead-container, ytd-masthead",
+    );
+    if (nextHeader !== header) {
+      if (header) resize?.unobserve(header);
+      header = nextHeader;
+      if (header) resize?.observe(header);
+    }
+    const headerRect = header?.getBoundingClientRect();
+    const headerStyle = header ? win.getComputedStyle(header) : null;
+    const headerBottom =
+      headerRect &&
+      headerRect.height > 0 &&
+      headerRect.top < win.innerHeight &&
+      headerStyle?.display !== "none" &&
+      headerStyle?.visibility !== "hidden" &&
+      headerStyle?.opacity !== "0"
+        ? Math.max(0, headerRect.bottom)
+        : 0;
+    top = headerBottom + 12;
+    // CSSOM updates do not rewrite YouTube's inline styles or trigger DOM observers.
+    videoRule.style.setProperty("top", `${top}px`, "important");
     const rect = movie?.getBoundingClientRect();
     active = !!(
       enabled &&
@@ -94,7 +132,7 @@ export function createMiniPlayer(
       rect &&
       rect.width > 0 &&
       rect.height > 0 &&
-      rect.bottom <= 0 &&
+      rect.bottom <= headerBottom &&
       rect.right > 0 &&
       rect.left < win.innerWidth &&
       !doc.fullscreenElement &&
@@ -102,6 +140,24 @@ export function createMiniPlayer(
     );
     video?.toggleAttribute("data-oyt-mini-player", active);
     movie?.toggleAttribute("data-oyt-mini-player-active", active);
+    if (active) {
+      // Fixed video layers must escape every native clipping wrapper, while
+      // retaining their DOM parent so native playback ownership is preserved.
+      for (
+        let layer = video?.parentElement;
+        layer && layer !== doc.body;
+        layer = layer.parentElement
+      ) {
+        layer.setAttribute("data-oyt-mini-player-layer", "");
+        layers.add(layer);
+        if (layer.matches("ytd-watch-flexy")) break;
+      }
+    } else {
+      layers.forEach((layer) =>
+        layer.removeAttribute("data-oyt-mini-player-layer"),
+      );
+      layers.clear();
+    }
     emit();
   }
   function schedule() {
@@ -116,8 +172,23 @@ export function createMiniPlayer(
     navigating = false;
     update();
   };
-  const mutations = new MutationObserver(schedule);
-  mutations.observe(doc.documentElement, { childList: true, subtree: true });
+  const mutations = new MutationObserver((records) => {
+    if (
+      records.some(
+        (record) =>
+          record.type === "childList" ||
+          (record.target instanceof Element &&
+            record.target.matches("#masthead-container, ytd-masthead")),
+      )
+    )
+      schedule();
+  });
+  mutations.observe(doc.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["style", "class", "hidden"],
+  });
   doc.addEventListener("yt-navigate-start", startNavigation);
   doc.addEventListener("yt-navigate-finish", finishNavigation);
   doc.addEventListener("fullscreenchange", update);
