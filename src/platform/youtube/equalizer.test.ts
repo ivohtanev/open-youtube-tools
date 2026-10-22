@@ -6,13 +6,166 @@ import {
   DEFAULT_EQ_APPROACH,
   EQ_APPROACHES,
 } from "../../core/equalizer-approaches";
+import { EQ_PRESETS } from "../../core/equalizer-presets";
 
 afterEach(() => document.body.replaceChildren());
+
+it("applies presets to the existing graph without changing routing, approach or saved User", async () => {
+  const {
+    audio,
+    context,
+    filters,
+    persist,
+    persistProfile,
+    persistEnabled,
+    persistApproach,
+  } = fixture([5.5, -2], "response");
+  await audio.setEnabled(true);
+  audio.setPreset("music");
+  expect(audio.snapshot()).toMatchObject({
+    enabled: true,
+    requestedEnabled: true,
+    approach: "response",
+    preset: "music",
+    gains: EQ_PRESETS[1].gains,
+  });
+  EQ_PRESETS[1].gains.forEach((gain, index) => {
+    expect(filters[index]!.gain.setTargetAtTime).toHaveBeenLastCalledWith(
+      gain,
+      0,
+      0.02,
+    );
+  });
+  expect(persistProfile.mock.lastCall![0]).toMatchObject({
+    preset: "music",
+    userGains: [5.5, -2, 0, 0, 0, 0, 0, 0, 0, 0],
+  });
+  audio.setGain(0, 12);
+  audio.reset();
+  expect(persistProfile).toHaveBeenCalledTimes(3);
+  expect(persist).not.toHaveBeenCalled();
+  expect(audio.snapshot().gains).toEqual(EQ_PRESETS[1].gains);
+  audio.setPreset("user");
+  expect(audio.snapshot().gains.slice(0, 2)).toEqual([5.5, -2]);
+  audio.setGain(0, 4);
+  expect(persist).toHaveBeenLastCalledWith([4, -2, 0, 0, 0, 0, 0, 0, 0, 0]);
+  expect(persistProfile.mock.lastCall![0].userGains[0]).toBe(4);
+  expect(context.createMediaElementSource).toHaveBeenCalledOnce();
+  expect(persistEnabled).toHaveBeenCalledExactlyOnceWith(true);
+  expect(persistApproach).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
+it("restores selected presets while OFF and ON and preserves them across video replacement", async () => {
+  for (const enabled of [false, true]) {
+    const { audio, context, makeContext, persistProfile } = fixture(
+      [9],
+      "compressor",
+      enabled,
+      { preset: "podcast", userGains: [3] },
+    );
+    expect(audio.snapshot().gains).toEqual(EQ_PRESETS[2].gains);
+    if (enabled) {
+      await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+      const replacement = document.createElement("video");
+      replacement.className = "html5-main-video";
+      document.querySelector("video")!.replaceWith(replacement);
+      document.dispatchEvent(new Event("yt-navigate-finish"));
+      await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+      expect(context.createMediaElementSource).toHaveBeenCalledTimes(2);
+    } else {
+      audio.setPreset("movie");
+      expect(makeContext).not.toHaveBeenCalled();
+    }
+    audio.setPreset("user");
+    expect(audio.snapshot().gains[0]).toBe(3);
+    const calls = persistProfile.mock.calls.length;
+    audio.dispose();
+    audio.setPreset("music");
+    audio.setGain(0, 12);
+    audio.reset();
+    expect(persistProfile).toHaveBeenCalledTimes(calls);
+  }
+});
+
+it("edits every preset in Shadow DOM, fine-tunes with wheel, and restores only the selected curve", () => {
+  const { audio, makeContext, persistProfile } = fixture([4]);
+  const player = createPlayer(document);
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = host.attachShadow({ mode: "open" });
+  const container = document.createElement("div");
+  root.append(container);
+  let dispose = equalizer(audio).mount(container, player);
+  const button = (text: string) =>
+    Array.from(container.querySelectorAll("button")).find(
+      (item) => item.textContent === text,
+    )!;
+  const slider = () =>
+    container.querySelector<HTMLInputElement>('input[type="range"]')!;
+  const restore = () =>
+    container.querySelector<HTMLButtonElement>(".eq-restore")!;
+  for (const label of ["Music", "Podcast", "Movie"]) {
+    button(label).click();
+    expect(button(label).getAttribute("aria-pressed")).toBe("true");
+    expect(slider().disabled).toBe(false);
+    expect(restore().disabled).toBe(true);
+    slider().value = "5.5";
+    slider().dispatchEvent(new Event("input"));
+    expect(audio.snapshot().gains[0]).toBe(5.5);
+    expect(button(label).dataset.customized).toBe("true");
+    expect(restore().disabled).toBe(false);
+  }
+  const wheel = (deltaY: number, extra = {}) => {
+    const event = new WheelEvent("wheel", {
+      deltaY,
+      bubbles: true,
+      cancelable: true,
+      ...extra,
+    });
+    slider().dispatchEvent(event);
+    return event;
+  };
+  expect(wheel(-100).defaultPrevented).toBe(true);
+  expect(audio.snapshot().gains[0]).toBe(5.7);
+  wheel(1);
+  expect(audio.snapshot().gains[0]).toBe(5.5);
+  expect(wheel(0).defaultPrevented).toBe(false);
+  expect(wheel(-1, { ctrlKey: true }).defaultPrevented).toBe(false);
+  expect(audio.snapshot().gains[0]).toBe(5.5);
+  audio.setGain(0, 11.9);
+  wheel(-1);
+  expect(audio.snapshot().gains[0]).toBe(12);
+  audio.setGain(0, -11.9);
+  wheel(100);
+  expect(audio.snapshot().gains[0]).toBe(-12);
+  expect(persistProfile.mock.lastCall![0].presetGains.movie[0]).toBe(-12);
+  dispose();
+  dispose = equalizer(audio).mount(container, player);
+  expect(button("Movie").getAttribute("aria-pressed")).toBe("true");
+  expect(slider().value).toBe("-12");
+  restore().click();
+  expect(audio.snapshot().gains).toEqual(EQ_PRESETS[3].gains);
+  button("Music").click();
+  expect(slider().value).toBe("5.5");
+  button("User").click();
+  expect(slider().value).toBe("4");
+  restore().click();
+  expect(audio.snapshot().gains).toEqual(Array(10).fill(0));
+  expect(container.querySelector(".eq-preset-overlay")).toBeNull();
+  expect(container.textContent).toContain("Made with AI");
+  expect(container.textContent).not.toContain("Experimental");
+  expect(makeContext).not.toHaveBeenCalled();
+  dispose();
+  player.dispose();
+  audio.dispose();
+});
 
 function fixture(
   saved: unknown = [],
   savedApproach?: unknown,
   savedEnabled?: unknown,
+  savedProfile?: unknown,
 ) {
   history.replaceState(null, "", "/watch?v=test");
   document.body.innerHTML =
@@ -65,6 +218,7 @@ function fixture(
   const persist = vi.fn();
   const persistApproach = vi.fn();
   const persistEnabled = vi.fn();
+  const persistProfile = vi.fn();
   const audio = createEqualizer(document, {
     gains: saved,
     approach: savedApproach,
@@ -73,6 +227,8 @@ function fixture(
     makeContext,
     persistApproach,
     persistEnabled,
+    profile: savedProfile,
+    persistProfile,
   });
   return {
     audio,
@@ -84,6 +240,7 @@ function fixture(
     persist,
     persistApproach,
     persistEnabled,
+    persistProfile,
   };
 }
 
@@ -404,7 +561,7 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   approaches.value = "direct";
   approaches.dispatchEvent(new Event("change"));
   expect(audio.snapshot().approach).toBe("direct");
-  expect(container.textContent).toContain("Loud material may clip");
+  expect(container.textContent).not.toContain("Loud material may clip");
   expect(audio.snapshot().enabled).toBe(false);
   const sliders = container.querySelectorAll<HTMLInputElement>(
     'input[type="range"]',

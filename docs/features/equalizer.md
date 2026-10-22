@@ -9,17 +9,52 @@ automated checks do not certify the browser or device's audio output.
 
 Click the Equalizer toolbar icon to open its panel. An OFF/ON switch controls processing;
 opening the panel or editing a slider does not enable EQ. The icon glows only
-while processing is enabled and the audio context is running. Reset sets all
-bands to 0 dB without changing ON/OFF. OFF is on the left, ON on the right.
+while processing is enabled and the audio context is running. The restore icon returns the selected preset to its initial curve without changing ON/OFF
+or other presets. User defaults to 0 dB.
+OFF is on the left, ON on the right.
 The switch is a keyboard-accessible button with `role="switch"` and
 `aria-checked` reflecting the user's saved preference. The icon reflects actual
 processing, so it stays unlit while a saved ON preference waits for activation.
 
 The ten peaking bands are 31.25, 62.5, 125, 250, 500, 1000, 2000, 4000, 8000 and
-16000 Hz, with Q 1.4 and gains from -12 to +12 dB in 0.5 dB increments. Centers
+16000 Hz, with Q 1.4 and gains from -12 to +12 dB in 0.1 dB slider/keyboard increments. Mouse wheel adjusts by 0.2 dB per event,
+including presets with half-dB starting values, clamped at the limits. Ctrl/Meta
+wheel remains available for browser zoom. Centers
 are bounded below the runtime Nyquist frequency. Gains, approach and ON/OFF
 preference persist in extension local storage across refreshes, videos and
 browser restarts. First use starts OFF. Changes use 20 ms smoothing.
+
+## Presets
+
+Four always-visible choices sit above the bands: User, Music, Podcast and Movie.
+Every preset is editable and saves automatically into its own curve; there is no
+Save button or editing mode. The selected button uses `aria-pressed` and a mint
+dot when its curve differs from its defaults. The single restore icon has a
+preset-specific tooltip and accessible label; it is disabled at default values.
+It restores only the selected preset, preserving edits to all other presets.
+Selection and edits do not change ON/OFF, the gain approach or audio routing;
+they use the existing gain smoothing and compensation. Editing while OFF saves
+without starting an audio context. The footer contains a wheel hint and Made with
+AI credit; approach descriptions and the experimental notice are absent from the UI.
+
+Built-in curves are gentle starting points, not content analysis or automatic
+loudness normalization. Edit `EQ_PRESETS` in `src/core/equalizer-presets.ts` to tune
+them. Gains follow the ten frequencies above, in dB:
+
+| Preset  | 31  | 63  | 125 | 250 | 500 | 1k  | 2k  | 4k  | 8k  | 16k |
+| ------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Music   | 2   | 2   | 1   | 0   | -1  | 0   | 1   | 1.5 | 2   | 1   |
+| Podcast | -6  | -4  | -2  | -1  | 0   | 1.5 | 3   | 2   | 0   | -2  |
+| Movie   | 3   | 2.5 | 1.5 | 0   | -1  | 0   | 1.5 | 2   | 1   | 0   |
+
+`equalizerProfile` stores `{ preset, userGains, presetGains }` together in one local-storage
+record. On older installations, `equalizerGains` supplies the initial User curve;
+once a profile exists, it takes precedence. Older profiles retain User and the
+selected preset; missing named curves use factory defaults. `presetGains` stores
+the independent Music, Podcast and Movie curves. Legacy gains continue to be updated
+only by User edits/reset. Selecting a preset never overwrites User, including
+across reloads, toolbar remounts or video changes. Invalid preset names fall back
+to User; non-finite gains become zero and out-of-range gains are clamped.
 
 ## EQ approaches
 
@@ -27,7 +62,7 @@ The EQ approach dropdown applies immediately without resetting band gains or
 enabling processing. The selected approach persists as `equalizerApproach`;
 missing or invalid saved values select Boost + compressor. Existing valid saved
 approaches remain selected. The dropdown labels and order are unchanged, including
-the existing "recommended" text on Curve headroom. Reset flattens the bands
+the existing "recommended" text on Curve headroom. Restore resets the selected curve
 and preserves the selected approach. The panel displays the current overall
 compensation in dB while enabled.
 
@@ -59,7 +94,7 @@ Windows, driver and device processing after the Web Audio graph.
 
 ## Scope and non-goals
 
-Regular YouTube watch pages only. Presets, tab capture,
+Regular YouTube watch pages only. Tab capture,
 recording, parametric Q controls and remote casting support are outside this prototype.
 
 ## Contracts and dependencies
@@ -73,6 +108,13 @@ point persists `equalizerGains`, `equalizerApproach` and `equalizerEnabled`
 through the existing storage permission. Only explicit switch changes write
 `equalizerEnabled`; navigation, failures and disposal preserve it. No dependencies
 or extension permissions are added.
+
+Preset definitions, validation, legacy migration and per-preset editing rules live in
+`src/core/equalizer-presets.ts`. This module has no DOM, YouTube, Web Audio or
+extension-storage dependency. The adapter applies the resulting gains; the entry
+point supplies persistence callbacks. A future general-purpose extension or
+desktop host can reuse this profile logic with its own routing and storage.
+This change does not add capture of other tabs, sites or system audio.
 
 ## Lifecycle and failure behavior
 
@@ -113,14 +155,19 @@ restoration, non-watch navigation, autoplay waiting/cancellation/retry and the
 panel's ON-only icon illumination. Filter responses in unit tests are synthetic;
 real DSP and audio output still require the following manual acceptance checks.
 
+Preset regression tests also cover legacy migration, invalid storage, isolated
+curves, edits/reset, active graph reuse, OFF/ON restoration, video replacement,
+Shadow DOM controls, wheel direction/limits/zoom and remounting. In a browser,
+verify keyboard navigation, each preset's audible effect and that edited curves
+survive switching and reload. Restoring one preset must leave the others intact.
+
 1. Reload the unpacked extension from `.output/chrome-mv3`, then reload a YouTube
    watch page. On first use, confirm OFF, no glow, ten labeled sliders and Boost +
    compressor selected. Check the unchanged dropdown labels/order. With a saved
    preference, confirm its switch position and settings instead.
 2. Start playback, enable EQ, and confirm audible stereo output. Cut 1 kHz and
    boost bass modestly; listen for a change. Compare Reset, OFF and ON. Switch
-   through every approach with the same band settings and confirm the help text
-   and compensation readout change. Curve and Conservative headroom intentionally
+   through every approach with the same band settings and confirm the compensation readout changes. Curve and Conservative headroom intentionally
    reduce overall level. Direct boost and Boost + compressor do not apply preamp
    attenuation. Compare at modest playback levels and check for distortion.
 3. Repeat ON/OFF at least ten times, pause/resume, seek and change playback speed.
@@ -131,7 +178,7 @@ real DSP and audio output still require the following manual acceptance checks.
    when playback can run. Check that OFF stays OFF on later videos as well.
 5. Hide and restore Equalizer through toolbar options. Confirm audio stays audible
    and processing remains as configured. Reload the page and restart the browser:
-   gains, approach and ON/OFF must persist. Reset should flatten bands without
+   gains, approach and ON/OFF must persist. Restore should reset only the selected preset without
    changing the approach or ON/OFF. Test both ON and OFF restoration.
 6. Test multiple tabs, extension reload/disable and a rejected/occupied source.
    Reload the page for recovery if necessary; record browser version and result.

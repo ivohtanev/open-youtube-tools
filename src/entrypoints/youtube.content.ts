@@ -32,6 +32,7 @@ export default defineContentScript({
         "hiddenTools",
         "miniPlayerEnabled",
         "equalizerGains",
+        "equalizerProfile",
         "equalizerApproach",
         "equalizerEnabled",
       ])
@@ -39,6 +40,12 @@ export default defineContentScript({
     if (ctx.isInvalid) return;
     const audio = createEqualizer(document, {
       gains: saved.equalizerGains,
+      profile: saved.equalizerProfile,
+      persistProfile: (equalizerProfile) => {
+        void browser.storage.local
+          .set({ equalizerProfile })
+          .catch(console.warn);
+      },
       approach: saved.equalizerApproach,
       enabled: saved.equalizerEnabled,
       persistGains: (equalizerGains) => {
