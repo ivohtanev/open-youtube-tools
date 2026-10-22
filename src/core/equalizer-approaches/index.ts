@@ -1,9 +1,8 @@
 import { response } from "./response";
 import { direct } from "./direct";
 import { compressor } from "./compressor";
-import { conservative } from "./conservative";
 
-export const EQ_APPROACHES = [response, direct, compressor, conservative];
+export const EQ_APPROACHES = [compressor, direct, response];
 export type EqualizerApproachId = (typeof EQ_APPROACHES)[number]["id"];
 export const DEFAULT_EQ_APPROACH: EqualizerApproachId = "compressor";
 

@@ -2,7 +2,7 @@ import type { EqualizerApproach } from "./types";
 
 export const compressor: EqualizerApproach = {
   id: "compressor",
-  label: "Boost + compressor",
+  label: "Boost + Compressor",
   description:
     "Boosts bands and compresses loud peaks. Can reduce the whole mix on strong bass hits and adds a little latency. Not a guaranteed clipping or true-peak limiter.",
   preampDb: () => 0,

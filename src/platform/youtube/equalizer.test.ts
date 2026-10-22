@@ -247,7 +247,7 @@ function fixture(
 it("starts off, smooths gains with combined headroom, and reuses the source after bypass", async () => {
   const { audio, context, filters, preamp, makeContext } = fixture(
     [6, 6],
-    "conservative",
+    "response",
   );
   expect(makeContext).not.toHaveBeenCalled();
   expect(audio.snapshot().enabled).toBe(false);
@@ -256,11 +256,12 @@ it("starts off, smooths gains with combined headroom, and reuses the source afte
   expect(filters[0]!.type).toBe("peaking");
   expect(filters[0]!.frequency.value).toBe(31.25);
   expect(filters[9]!.frequency.value).toBe(16000);
-  expect(preamp.gain.setTargetAtTime).toHaveBeenLastCalledWith(
-    10 ** (-12 / 20),
-    0,
-    0.02,
+  expect(preamp.gain.setTargetAtTime.mock.lastCall![0]).toBeCloseTo(
+    10 ** (-6 / 20),
   );
+  expect(preamp.gain.setTargetAtTime.mock.lastCall!.slice(1)).toEqual([
+    0, 0.02,
+  ]);
   await audio.setEnabled(false);
   expect(preamp.gain.setTargetAtTime).toHaveBeenLastCalledWith(1, 0, 0.02);
   for (const filter of filters.slice(0, 10))
@@ -299,8 +300,8 @@ it("defaults to compression, supports combined-response compensation and preserv
   expect(audio.snapshot().approach).toBe("compressor");
   audio.setApproach("response");
   await audio.setEnabled(true);
-  // The synthetic filter responses have distinct peaks. Their maximum is 6 dB,
-  // whereas the original conservative strategy would attenuate by 12 dB.
+  // The synthetic filter responses have distinct peaks, so their combined
+  // maximum remains 6 dB rather than adding the two boosts.
   expect(audio.snapshot().preampDb).toBeCloseTo(-6);
   expect(preamp.gain.setTargetAtTime.mock.lastCall![0]).toBeCloseTo(
     10 ** (-6 / 20),
@@ -552,15 +553,19 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   expect(
     Array.from(approaches.options, (option) => option.textContent),
   ).toEqual([
-    "Curve headroom (recommended)",
-    "Direct boost",
-    "Boost + compressor",
-    "Conservative headroom (original)",
+    "Boost + Compressor",
+    "Direct Boost",
+    "Curve Headroom (Compensation)",
   ]);
+  const level = container.querySelector(".eq-approach")!.nextElementSibling!;
+  const hint =
+    "If you experience audio problems, switch to Curve Headroom (Compensation).";
+  expect(level.textContent).toBe(hint);
   expect(approaches.value).toBe(DEFAULT_EQ_APPROACH);
   approaches.value = "direct";
   approaches.dispatchEvent(new Event("change"));
   expect(audio.snapshot().approach).toBe("direct");
+  expect(level.textContent).toBe(hint);
   expect(container.textContent).not.toContain("Loud material may clip");
   expect(audio.snapshot().enabled).toBe(false);
   const sliders = container.querySelectorAll<HTMLInputElement>(
@@ -578,7 +583,14 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   expect(toggle.previousElementSibling?.textContent).toBe("OFF");
   expect(toggle.nextElementSibling?.textContent).toBe("ON");
   expect(trigger.dataset.modified).toBe("true");
+  approaches.value = "response";
+  approaches.dispatchEvent(new Event("change"));
+  expect(level.textContent).toBe("Overall compensation: -5.5 dB");
+  sliders[0]!.value = "3";
+  sliders[0]!.dispatchEvent(new Event("input"));
+  expect(level.textContent).toBe("Overall compensation: -3.0 dB");
   toggle.click();
+  expect(level.textContent).toBe("Overall compensation: 0.0 dB");
   expect(toggle.getAttribute("aria-checked")).toBe("false");
   expect(trigger.dataset.modified).toBe("false");
   await audio.setEnabled(true);

@@ -60,18 +60,24 @@ to User; non-finite gains become zero and out-of-range gains are clamped.
 
 The EQ approach dropdown applies immediately without resetting band gains or
 enabling processing. The selected approach persists as `equalizerApproach`;
-missing or invalid saved values select Boost + compressor. Existing valid saved
-approaches remain selected. The dropdown labels and order are unchanged, including
-the existing "recommended" text on Curve headroom. Restore resets the selected curve
-and preserves the selected approach. The panel displays the current overall
-compensation in dB while enabled.
+missing, invalid or removed saved values (including the former conservative mode) select
+Boost + Compressor. Existing valid saved approaches remain selected. Restore resets
+the selected curve and preserves the selected approach.
 
-| Approach                         | Behavior                                                                                                                                                                           |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Curve headroom (recommended)     | Attenuates by the estimated maximum positive gain of the combined filter response. Accounts for overlapping boosts and cuts instead of summing every positive slider.              |
-| Direct boost                     | Unity preamp, so positive band gains actually boost the signal. Loud material can clip or trigger downstream limiting.                                                             |
-| Boost + compressor (default)     | Unity preamp followed by a DynamicsCompressorNode: -3 dB threshold, hard knee, 20:1 ratio, 3 ms attack, 150 ms release. May audibly change dynamics or duck the mix on bass peaks. |
-| Conservative headroom (original) | Attenuates by the sum of positive band settings. Usually much quieter with multiple boosts.                                                                                        |
+The dropdown order is:
+
+1. **Boost + Compressor** (default): unity preamp followed by a DynamicsCompressorNode:
+   -3 dB threshold, hard knee, 20:1 ratio, 3 ms attack, 150 ms release.
+   May change dynamics or duck the mix on bass peaks.
+2. **Direct Boost**: unity preamp, so positive gains boost the signal.
+   Loud material can clip or trigger downstream limiting.
+3. **Curve Headroom (Compensation)**: attenuates by the estimated maximum positive
+   gain of the combined filter response, accounting for overlapping boosts and cuts.
+
+The first two modes show: "If you experience audio problems, switch to Curve
+Headroom (Compensation)." The third shows "Overall compensation: X.X dB",
+updated on settings changes (0.0 dB while bypassed). OFF, activation waiting and
+error feedback appear separately below the footer.
 
 Boost + compressor is the default to provide actual boosts with peak compression.
 Curve headroom preserves dynamics but offsets a single isolated +6 dB boost by about
@@ -167,9 +173,10 @@ survive switching and reload. Restoring one preset must leave the others intact.
    preference, confirm its switch position and settings instead.
 2. Start playback, enable EQ, and confirm audible stereo output. Cut 1 kHz and
    boost bass modestly; listen for a change. Compare Reset, OFF and ON. Switch
-   through every approach with the same band settings and confirm the compensation readout changes. Curve and Conservative headroom intentionally
-   reduce overall level. Direct boost and Boost + compressor do not apply preamp
-   attenuation. Compare at modest playback levels and check for distortion.
+   through every approach with the same band settings. Confirm the first two
+   show the troubleshooting hint and Curve Headroom shows updating compensation.
+   Curve Headroom intentionally reduces overall level; Direct Boost and Boost +
+   Compressor do not apply preamp attenuation. Compare at modest playback levels and check for distortion.
 3. Repeat ON/OFF at least ten times, pause/resume, seek and change playback speed.
    Check for silence, doubled audio, clicks and lip-sync changes.
 4. Navigate between videos, play through an ad and change audio tracks. Check
