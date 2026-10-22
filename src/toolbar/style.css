@@ -270,7 +270,7 @@ button:disabled {
 }
 .eq-bands {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 16px 0 8px;
@@ -299,60 +299,94 @@ button:disabled {
 }
 .eq-band {
   display: flex;
-  flex: 1 0 30px;
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
-.eq-heading-actions {
+.eq-preset-row {
   display: flex;
-  gap: 6px;
-}
-.eq-presets-reveal {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 180ms ease;
-}
-.eq-presets-reveal.expanded {
-  grid-template-rows: 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
 }
 .eq-presets {
   display: flex;
-  gap: 6px;
-  overflow: hidden;
-  min-height: 0;
+  flex: 1;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #ffffff12;
+  border-radius: 10px;
+  background: #ffffff06;
 }
 .eq-presets button {
+  position: relative;
   flex: 1;
   min-width: 0;
-  margin-top: 12px;
-  border-color: #ffffff30;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 7px 5px;
+  color: #bdbdbd;
 }
 .eq-presets button[aria-pressed="true"] {
-  background: #8ab4f820;
-  border-color: #8ab4f8;
+  background: #8ab4f81c;
+  border-color: #8ab4f850;
+  color: #c9ddff;
 }
-.eq-band-area {
-  position: relative;
-}
-.eq-preset-overlay {
+.eq-presets button[data-customized="true"]::after {
+  content: "";
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  border-radius: 6px;
-  background: rgb(0 0 0 / 50%);
-  color: #fff;
-  font-weight: 600;
-  text-align: center;
+  right: 5px;
+  top: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #a6e3c0;
+}
+.eq-restore {
+  flex-shrink: 0;
+}
+.eq-restore:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.eq-preset-hint {
+  margin: 7px 0 0;
+  color: #aaa;
+  font-size: 10px;
+}
+.eq-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 11px;
+  border-top: 1px solid #ffffff12;
+  font-size: 10px;
+  color: #aaa;
+}
+.eq-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b9c8e0;
+  white-space: nowrap;
+}
+.eq-credit svg {
+  width: 14px;
+  height: 14px;
+  color: #a6e3c0;
 }
 .eq-band input {
   writing-mode: vertical-lr;
   direction: rtl;
   width: 24px;
+  max-width: 100%;
+  margin-inline: 0;
   height: 130px;
   accent-color: #8ab4f8;
   cursor: pointer;
@@ -372,7 +406,7 @@ button:disabled {
    protruding arrow create a scrollbar at normal viewport heights. */
 @media (max-height: 500px) {
   .eq-panel {
-    max-height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 90px);
     overflow-y: auto;
   }
 }

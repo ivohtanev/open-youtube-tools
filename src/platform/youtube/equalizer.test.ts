@@ -42,7 +42,7 @@ it("applies presets to the existing graph without changing routing, approach or 
   });
   audio.setGain(0, 12);
   audio.reset();
-  expect(persistProfile).toHaveBeenCalledTimes(1);
+  expect(persistProfile).toHaveBeenCalledTimes(3);
   expect(persist).not.toHaveBeenCalled();
   expect(audio.snapshot().gains).toEqual(EQ_PRESETS[1].gains);
   audio.setPreset("user");
@@ -88,8 +88,8 @@ it("restores selected presets while OFF and ON and preserves them across video r
   }
 });
 
-it("reveals presets above the sliders, locks built-ins and restores editable User on remount", () => {
-  const { audio, makeContext } = fixture([4]);
+it("edits every preset in Shadow DOM, fine-tunes with wheel, and restores only the selected curve", () => {
+  const { audio, makeContext, persistProfile } = fixture([4]);
   const player = createPlayer(document);
   const host = document.createElement("div");
   document.body.append(host);
@@ -97,49 +97,64 @@ it("reveals presets above the sliders, locks built-ins and restores editable Use
   const container = document.createElement("div");
   root.append(container);
   let dispose = equalizer(audio).mount(container, player);
-  const buttons = () => Array.from(container.querySelectorAll("button"));
   const button = (text: string) =>
-    buttons().find((item) => item.textContent === text)!;
-  button("Presets").click();
-  expect(button("Presets").getAttribute("aria-expanded")).toBe("true");
-  expect(
-    container.querySelector<HTMLElement>(".eq-presets-reveal")!.inert,
-  ).toBe(false);
-  expect(buttons().indexOf(button("Presets"))).toBeLessThan(
-    buttons().indexOf(button("Reset")),
-  );
-  const overlay = container.querySelector<HTMLElement>(".eq-preset-overlay")!;
-  const sliders = Array.from(
-    container.querySelectorAll<HTMLInputElement>('input[type="range"]'),
-  );
+    Array.from(container.querySelectorAll("button")).find(
+      (item) => item.textContent === text,
+    )!;
+  const slider = () =>
+    container.querySelector<HTMLInputElement>('input[type="range"]')!;
+  const restore = () =>
+    container.querySelector<HTMLButtonElement>(".eq-restore")!;
   for (const label of ["Music", "Podcast", "Movie"]) {
     button(label).click();
     expect(button(label).getAttribute("aria-pressed")).toBe("true");
-    expect(sliders.every((input) => input.disabled)).toBe(true);
-    expect(overlay.hidden).toBe(false);
-    expect(overlay.textContent).toBe("Select User to adjust EQ.");
-    expect(button("Reset").disabled).toBe(true);
+    expect(slider().disabled).toBe(false);
+    expect(restore().disabled).toBe(true);
+    slider().value = "5.5";
+    slider().dispatchEvent(new Event("input"));
+    expect(audio.snapshot().gains[0]).toBe(5.5);
+    expect(button(label).dataset.customized).toBe("true");
+    expect(restore().disabled).toBe(false);
   }
-  button("Presets").click();
-  expect(
-    container.querySelector<HTMLElement>(".eq-presets-reveal")!.inert,
-  ).toBe(true);
-  expect(sliders.every((input) => input.disabled)).toBe(true);
+  const wheel = (deltaY: number, extra = {}) => {
+    const event = new WheelEvent("wheel", {
+      deltaY,
+      bubbles: true,
+      cancelable: true,
+      ...extra,
+    });
+    slider().dispatchEvent(event);
+    return event;
+  };
+  expect(wheel(-100).defaultPrevented).toBe(true);
+  expect(audio.snapshot().gains[0]).toBe(5.7);
+  wheel(1);
+  expect(audio.snapshot().gains[0]).toBe(5.5);
+  expect(wheel(0).defaultPrevented).toBe(false);
+  expect(wheel(-1, { ctrlKey: true }).defaultPrevented).toBe(false);
+  expect(audio.snapshot().gains[0]).toBe(5.5);
+  audio.setGain(0, 11.9);
+  wheel(-1);
+  expect(audio.snapshot().gains[0]).toBe(12);
+  audio.setGain(0, -11.9);
+  wheel(100);
+  expect(audio.snapshot().gains[0]).toBe(-12);
+  expect(persistProfile.mock.lastCall![0].presetGains.movie[0]).toBe(-12);
   dispose();
   dispose = equalizer(audio).mount(container, player);
   expect(button("Movie").getAttribute("aria-pressed")).toBe("true");
-  button("Presets").click();
+  expect(slider().value).toBe("-12");
+  restore().click();
+  expect(audio.snapshot().gains).toEqual(EQ_PRESETS[3].gains);
+  button("Music").click();
+  expect(slider().value).toBe("5.5");
   button("User").click();
-  const input = container.querySelector<HTMLInputElement>(
-    'input[type="range"]',
-  )!;
-  expect(input.disabled).toBe(false);
-  expect(input.value).toBe("4");
-  input.value = "5.5";
-  input.dispatchEvent(new Event("input"));
-  expect(audio.snapshot().gains[0]).toBe(5.5);
-  button("Reset").click();
+  expect(slider().value).toBe("4");
+  restore().click();
   expect(audio.snapshot().gains).toEqual(Array(10).fill(0));
+  expect(container.querySelector(".eq-preset-overlay")).toBeNull();
+  expect(container.textContent).toContain("Made with AI");
+  expect(container.textContent).not.toContain("Experimental");
   expect(makeContext).not.toHaveBeenCalled();
   dispose();
   player.dispose();
@@ -546,7 +561,7 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   approaches.value = "direct";
   approaches.dispatchEvent(new Event("change"));
   expect(audio.snapshot().approach).toBe("direct");
-  expect(container.textContent).toContain("Loud material may clip");
+  expect(container.textContent).not.toContain("Loud material may clip");
   expect(audio.snapshot().enabled).toBe(false);
   const sliders = container.querySelectorAll<HTMLInputElement>(
     'input[type="range"]',

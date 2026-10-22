@@ -280,7 +280,7 @@ export function createEqualizer(
       if (disposed || !profile.setGain(index, gain)) return;
       gains = profile.gains();
       apply();
-      persist([...gains]);
+      if (profile.snapshot().preset === "user") persist([...gains]);
       persistProfile(profile.snapshot());
       emit();
     },
@@ -302,7 +302,7 @@ export function createEqualizer(
       if (disposed || !profile.reset()) return;
       gains = profile.gains();
       apply();
-      persist([...gains]);
+      if (profile.snapshot().preset === "user") persist([...gains]);
       persistProfile(profile.snapshot());
       emit();
     },
