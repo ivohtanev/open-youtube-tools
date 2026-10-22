@@ -1,4 +1,11 @@
 import { findVideo } from "./player";
+import { createResponseMeter } from "./equalizer-response";
+import {
+  getApproach,
+  parseApproach,
+  type EqualizerApproachId,
+} from "../../core/equalizer-approaches";
+import { configureCompressor } from "../../core/equalizer-approaches/compressor";
 
 import {
   EQ_FREQUENCIES,
@@ -10,6 +17,9 @@ type Graph = {
   context: AudioContext;
   preamp: GainNode;
   filters: BiquadFilterNode[];
+  compressor: DynamicsCompressorNode;
+  compressed: boolean;
+  responsePeakDb: (gains: readonly number[]) => number;
 };
 // Sources cannot be recreated for an already-owned element. Keep their audible
 // graph alive in bypass even when the toolbar is hidden or remounted.
@@ -20,6 +30,8 @@ export function createEqualizer(
   saved: unknown = [],
   persist: (gains: number[]) => void = () => {},
   makeContext: () => AudioContext = () => new AudioContext(),
+  savedApproach: unknown = undefined,
+  persistApproach: (approach: EqualizerApproachId) => void = () => {},
 ): EqualizerPort & { dispose(): void } {
   const gains = EQ_FREQUENCIES.map((_, i) =>
     Array.isArray(saved) &&
@@ -29,6 +41,8 @@ export function createEqualizer(
       : 0,
   );
   let enabled = false;
+  let approach = parseApproach(savedApproach);
+  let preampDb = 0;
   let pending = false;
   let error = "";
   let video: HTMLVideoElement | null = null;
@@ -36,18 +50,38 @@ export function createEqualizer(
   let generation = 0;
   let disposed = false;
   const listeners = new Set<(state: EqualizerState) => void>();
-  const snapshot = () => ({ enabled, pending, gains: [...gains], error });
+  const snapshot = () => ({
+    enabled,
+    pending,
+    gains: [...gains],
+    approach,
+    preampDb,
+    error,
+  });
   const emit = () => listeners.forEach((listener) => listener(snapshot()));
   const apply = () => {
     if (!graph) return;
     const { context, preamp, filters } = graph;
-    // Sum of positive gains is a conservative steady-state headroom bound for
-    // overlapping peaking filters, not a true-peak limiter.
-    const headroom = enabled
-      ? gains.reduce((sum, gain) => sum + Math.max(0, gain), 0)
+    preampDb = enabled
+      ? getApproach(approach).preampDb(gains, () =>
+          graph!.responsePeakDb(gains),
+        )
       : 0;
+    const compressed = enabled && approach === "compressor";
+    if (compressed !== graph.compressed) {
+      const tail = filters[filters.length - 1]!;
+      tail.disconnect();
+      graph.compressor.disconnect();
+      if (compressed) {
+        tail.connect(graph.compressor);
+        graph.compressor.connect(context.destination);
+      } else {
+        tail.connect(context.destination);
+      }
+      graph.compressed = compressed;
+    }
     preamp.gain.setTargetAtTime(
-      10 ** (-headroom / 20),
+      10 ** (preampDb / 20),
       context.currentTime,
       0.02,
     );
@@ -138,9 +172,19 @@ export function createEqualizer(
             tail = filter;
           }
           tail.connect(context.destination);
+          const compressor = context.createDynamicsCompressor();
+          configureCompressor(compressor);
+          const responsePeakDb = createResponseMeter(context, filters);
           const source = context.createMediaElementSource(target);
           source.connect(preamp);
-          graph = { context, preamp, filters };
+          graph = {
+            context,
+            preamp,
+            filters,
+            compressor,
+            compressed: false,
+            responsePeakDb,
+          };
           graphs.set(target, graph);
         }
         video = target;
@@ -173,6 +217,13 @@ export function createEqualizer(
       gains[index] = Math.max(-12, Math.min(12, gain));
       apply();
       persist([...gains]);
+      emit();
+    },
+    setApproach(value) {
+      if (disposed) return;
+      approach = parseApproach(value);
+      apply();
+      persistApproach(approach);
       emit();
     },
     reset() {

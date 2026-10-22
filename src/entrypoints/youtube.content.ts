@@ -32,6 +32,7 @@ export default defineContentScript({
         "hiddenTools",
         "miniPlayerEnabled",
         "equalizerGains",
+        "equalizerApproach",
       ])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
@@ -40,6 +41,13 @@ export default defineContentScript({
       saved.equalizerGains,
       (equalizerGains) => {
         void browser.storage.local.set({ equalizerGains }).catch(console.warn);
+      },
+      undefined,
+      saved.equalizerApproach,
+      (equalizerApproach) => {
+        void browser.storage.local
+          .set({ equalizerApproach })
+          .catch(console.warn);
       },
     );
     ctx.onInvalidated(() => audio.dispose());

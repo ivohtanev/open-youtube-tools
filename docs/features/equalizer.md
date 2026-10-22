@@ -2,8 +2,8 @@
 
 ## Status
 
-Implemented as an opt-in prototype. Type checking, 59 automated tests, formatting
-and the production build pass. Live YouTube/Brave audio acceptance is pending.
+Implemented as an opt-in prototype. Live YouTube/Brave audio acceptance is pending;
+automated checks do not certify the browser or device's audio output.
 
 ## User behavior
 
@@ -15,9 +15,41 @@ bands to 0 dB without changing ON/OFF.
 The ten peaking bands are 31.25, 62.5, 125, 250, 500, 1000, 2000, 4000, 8000 and
 16000 Hz, with Q 1.4 and gains from -12 to +12 dB in 0.5 dB increments. Centers
 are bounded below the runtime Nyquist frequency. Gains persist locally; enabled
-state deliberately does not persist in this prototype. Positive gains reduce
-the preamp by their sum for conservative headroom. This can lower perceived
-volume substantially and is not a true-peak limiter. Changes use 20 ms smoothing.
+state deliberately does not persist in this prototype. Changes use 20 ms smoothing.
+
+## EQ approaches
+
+The EQ approach dropdown applies immediately without resetting band gains or
+enabling processing. The selected approach persists as `equalizerApproach`;
+missing or invalid saved values select Curve headroom. Reset flattens the bands
+and preserves the selected approach. The panel displays the current overall
+compensation in dB while enabled.
+
+| Approach                              | Behavior                                                                                                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Curve headroom (recommended, default) | Attenuates by the estimated maximum positive gain of the combined filter response. Accounts for overlapping boosts and cuts instead of summing every positive slider.              |
+| Direct boost                          | Unity preamp, so positive band gains actually boost the signal. Loud material can clip or trigger downstream limiting.                                                             |
+| Boost + compressor                    | Unity preamp followed by a DynamicsCompressorNode: -3 dB threshold, hard knee, 20:1 ratio, 3 ms attack, 150 ms release. May audibly change dynamics or duck the mix on bass peaks. |
+| Conservative headroom (original)      | Attenuates by the sum of positive band settings. Usually much quieter with multiple boosts.                                                                                        |
+
+Curve headroom is the default because it avoids unnecessary attenuation while
+preserving dynamics. It still offsets a single isolated +6 dB boost by about
+-6 dB overall; choose Direct boost or Boost + compressor to compare actual
+absolute boosts. It does not automatically restore loudness or normalize tracks.
+No approach guarantees freedom from clipping or true-peak overshoot.
+
+The response estimator uses disconnected BiquadFilterNodes with the same types,
+frequencies, Q and target gains as the audible graph. It adds responses in dB at
+4097 logarithmically spaced frequencies from 1 Hz through Nyquist, plus DC and
+all band centers. This estimates steady-state response, not transient peaks.
+It runs on setting changes, not per audio block, and does not analyze content.
+
+The compressor is connected only while its approach is enabled. OFF and other
+approaches use the direct filter output, avoiding the compressor's look-ahead
+latency. Switching compressor routing can cause a brief discontinuity and should
+be checked in live playback. A compressor is not a brick-wall/true-peak limiter;
+the attack can allow peaks through. All approaches remain subject to browser,
+Windows, driver and device processing after the Web Audio graph.
 
 ## Scope and non-goals
 
@@ -28,8 +60,10 @@ recording, parametric Q controls and remote casting support are outside this pro
 
 `EqualizerPort` and shared frequencies live in `src/core/equalizer.ts`. The
 YouTube adapter owns Web Audio and video lifecycle; the feature receives the
-port and renders native controls with the shared Floating UI popover. The entry
-point persists gains through the existing storage permission. No dependencies
+port and renders native controls with the shared Floating UI popover. Each approach
+has its own module under `src/core/equalizer-approaches/`; browser response
+measurement lives in `src/platform/youtube/equalizer-response.ts`. The entry
+point persists gains and approach through the existing storage permission. No dependencies
 or extension permissions are added.
 
 ## Lifecycle and failure behavior
@@ -55,20 +89,27 @@ extension invalidation, ads, protected media and remote casting remain unverifie
 
 Automated coverage includes repeated activation/source reuse, smooth bypass,
 startup cancellation, source creation failure, element replacement, gain
-validation, reset and the panel's ON-only icon illumination.
+validation, reset, approach persistence callbacks/default validation, combined
+response estimation, compressor routing/bypass, dropdown interaction and the
+panel's ON-only icon illumination. Filter responses in unit tests are synthetic;
+real DSP and audio output still require the following manual acceptance checks.
 
 1. Reload the unpacked extension from `.output/chrome-mv3`, then reload a YouTube
    watch page. Open EQ: confirm OFF, no glow and ten labeled sliders.
 2. Start playback, enable EQ, and confirm audible stereo output. Cut 1 kHz and
-   boost bass modestly; listen for a change. Compare Reset, OFF and ON. Headroom
-   compensation intentionally changes loudness when positive gains are present.
+   boost bass modestly; listen for a change. Compare Reset, OFF and ON. Switch
+   through every approach with the same band settings and confirm the help text
+   and compensation readout change. Curve and Conservative headroom intentionally
+   reduce overall level. Direct boost and Boost + compressor do not apply preamp
+   attenuation. Compare at modest playback levels and check for distortion.
 3. Repeat ON/OFF at least ten times, pause/resume, seek and change playback speed.
    Check for silence, doubled audio, clicks and lip-sync changes.
 4. Navigate between videos, play through an ad and change audio tracks. Check
    normal, fullscreen, mini player and native PiP. After an element/source reset,
    confirm the icon is unlit and manually enable again.
 5. Hide and restore Equalizer through toolbar options. Confirm audio stays audible
-   and the restored tool is OFF. Reload the page: gains persist, ON does not.
+   and the restored tool is OFF. Reload the page: gains and approach persist, ON
+   does not. Reset should flatten bands without changing the approach.
 6. Test multiple tabs, extension reload/disable and a rejected/occupied source.
    Reload the page for recovery if necessary; record browser version and result.
 7. Before release, measure flat/boost/cut response, stereo preservation, clipping,

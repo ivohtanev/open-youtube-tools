@@ -1,5 +1,10 @@
 import type { Tool } from "../../core/contracts";
 import { EQ_FREQUENCIES, type EqualizerPort } from "../../core/equalizer";
+import {
+  EQ_APPROACHES,
+  getApproach,
+  parseApproach,
+} from "../../core/equalizer-approaches";
 import { createPopover, iconButton } from "../../toolbar/popover";
 
 export function equalizer(audio: EqualizerPort): Tool {
@@ -28,6 +33,25 @@ export function equalizer(audio: EqualizerPort): Tool {
       reset.textContent = "Reset";
       reset.onclick = () => audio.reset();
       heading.append(title, toggle, reset);
+      const approachLabel = document.createElement("label");
+      approachLabel.className = "eq-approach";
+      const approachCaption = document.createElement("span");
+      approachCaption.textContent = "EQ approach";
+      const approachSelect = document.createElement("select");
+      approachSelect.setAttribute("aria-label", "EQ approach");
+      for (const approach of EQ_APPROACHES) {
+        const option = document.createElement("option");
+        option.value = approach.id;
+        option.textContent = approach.label;
+        approachSelect.append(option);
+      }
+      approachSelect.onchange = () =>
+        audio.setApproach(parseApproach(approachSelect.value));
+      approachLabel.append(approachCaption, approachSelect);
+      const approachNote = document.createElement("p");
+      approachNote.className = "eq-note";
+      const level = document.createElement("p");
+      level.className = "eq-note";
       const bands = document.createElement("div");
       bands.className = "eq-bands";
       const controls = EQ_FREQUENCIES.map((frequency, index) => {
@@ -54,14 +78,24 @@ export function equalizer(audio: EqualizerPort): Tool {
       const note = document.createElement("p");
       note.className = "eq-note";
       note.textContent =
-        "Experimental · ±12 dB · Auto headroom. If audio becomes silent, reload this page. Enable only in a test tab.";
+        "Experimental · ±12 dB. If audio becomes silent, reload this page. Enable only in a test tab.";
       const status = document.createElement("p");
       status.className = "eq-note";
       status.setAttribute("role", "status");
-      panel.append(heading, bands, note, status);
+      panel.append(
+        heading,
+        approachLabel,
+        approachNote,
+        level,
+        bands,
+        note,
+        status,
+      );
       group.append(trigger, panel);
       container.append(group);
       const popover = createPopover(trigger, panel);
+      approachNote.id = `${panel.id}-approach-help`;
+      approachSelect.setAttribute("aria-describedby", approachNote.id);
       let available = player.snapshot().available;
       const render = () => {
         const state = audio.snapshot();
@@ -73,6 +107,11 @@ export function equalizer(audio: EqualizerPort): Tool {
             : "OFF";
         toggle.setAttribute("aria-pressed", String(state.enabled));
         toggle.disabled = !available || state.pending;
+        approachSelect.value = state.approach;
+        approachNote.textContent = getApproach(state.approach).description;
+        level.textContent = state.enabled
+          ? `Overall compensation: ${state.preampDb.toFixed(1)} dB`
+          : "EQ is OFF. Your approach and band settings will apply when enabled.";
         status.textContent = state.error;
         status.hidden = !state.error;
         controls.forEach(({ input, output }, i) => {
