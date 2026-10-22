@@ -8,7 +8,11 @@ The default toolbar attaches directly below the video with rounded lower corners
 
 The speed panel contains the text “Change Speed with Scroll” and an outlined chevron that slides the controls open. Reduced-motion preferences disable animation. Use this shared component for future tool panels instead of adding per-feature positioning logic.
 
-Hover and focus do not open panels. Feature icons show an absolutely positioned compact 11.5 × 6.9 px downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options gear has no hover arrow. Hover does not change button or menu-row colors. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
+Hover and focus do not open panels. Feature icons show an absolutely positioned compact 11.5 × 6.9 px downward chevron 10 px below the toolbar on hover, fading to 80% opacity while sliding down over 120 ms. The cue does not affect surrounding layout. The toolbar-options gear has no hover arrow. Settings items use a slightly darker background on hover. Keyboard focus shows the same cue. Reduced-motion preferences disable the transition. Panel pointers use Floating UI’s built-in arrow positioning, including flipped placements.
+
+Clicking panel padding, a title or a disabled control must not dismiss the containing panel, including after interacting with buttons, selects or nested settings. Focus clearing without a new focus target keeps the panel open. Moving focus to an external control, clicking outside or pressing Escape still dismisses it.
+
+`toolbar/checkable-menu-item.ts` provides reusable full-row checkbox and radio controls. Use it for new checkable settings: text, icon and row padding activate the native input exactly once, while direct input clicks and keyboard activation retain native behavior. Supply a shared `name` for mutually exclusive radio items. Functions and Mini player use this component; change callbacks own persistence and feature lifecycle updates.
 
 ## Settings and position
 

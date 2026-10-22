@@ -5,6 +5,7 @@ import type {
   ToolbarLayout,
 } from "../core/contracts";
 import { createPopover, iconButton } from "./popover";
+import { createCheckableMenuItem } from "./checkable-menu-item";
 
 export function mountToolbar(
   container: HTMLElement,
@@ -85,35 +86,29 @@ export function mountToolbar(
   functionsTrigger.setAttribute("aria-label", "Functions");
   const functionsPanel = document.createElement("div");
   for (const tool of tools) {
-    const row = document.createElement("label");
-    row.className = "function-option";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = !hiddenTools.has(tool.id);
     const icon = iconButton(tool.name, tool.icon).querySelector("svg")!;
-    const name = document.createElement("span");
-    name.textContent = tool.name;
-    row.append(checkbox, icon, name);
-    checkbox.onchange = () => {
-      setEnabled(tool, checkbox.checked);
-      if (checkbox.checked) hiddenTools.delete(tool.id);
-      else hiddenTools.add(tool.id);
-      options.onHiddenToolsChange?.([...hiddenTools]);
-    };
+    const row = createCheckableMenuItem({
+      label: tool.name,
+      checked: !hiddenTools.has(tool.id),
+      icon,
+      onChange: (checked) => {
+        setEnabled(tool, checked);
+        if (checked) hiddenTools.delete(tool.id);
+        else hiddenTools.add(tool.id);
+        options.onHiddenToolsChange?.([...hiddenTools]);
+      },
+    });
     functionsPanel.append(row);
   }
   const playbackTrigger = document.createElement("button");
   playbackTrigger.textContent = "Player Playback ›";
   playbackTrigger.setAttribute("aria-label", "Player Playback");
   const playbackPanel = document.createElement("div");
-  const miniPlayerRow = document.createElement("label");
-  miniPlayerRow.className = "function-option";
-  const miniPlayerCheckbox = document.createElement("input");
-  miniPlayerCheckbox.type = "checkbox";
-  miniPlayerCheckbox.checked = options.miniPlayerEnabled !== false;
-  miniPlayerCheckbox.onchange = () =>
-    options.onMiniPlayerEnabledChange?.(miniPlayerCheckbox.checked);
-  miniPlayerRow.append(miniPlayerCheckbox, "Mini player");
+  const miniPlayerRow = createCheckableMenuItem({
+    label: "Mini player",
+    checked: options.miniPlayerEnabled !== false,
+    onChange: (checked) => options.onMiniPlayerEnabledChange?.(checked),
+  });
   playbackPanel.append(miniPlayerRow);
   menu.append(
     layoutTrigger,
