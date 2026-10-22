@@ -5,7 +5,16 @@ import {
   type VideoFiltersPort,
 } from "../../core/video-filters";
 import { createPopover, iconButton } from "../../toolbar/popover";
-import { createCheckableMenuItem } from "../../toolbar/checkable-menu-item";
+
+const controlIcons = {
+  brightness:
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
+  contrast:
+    '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/>',
+  saturation:
+    '<path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
+  zoom: '<circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M7 10h6m-3-3v6"/>',
+};
 
 export function videoFilters(filters: VideoFiltersPort): Tool {
   const icon =
@@ -19,67 +28,53 @@ export function videoFilters(filters: VideoFiltersPort): Tool {
       group.className = "tool";
       const trigger = iconButton("Video filters", icon);
       const panel = document.createElement("div");
-      panel.className = "eq-panel video-filters-panel";
+      panel.className = "video-filters-panel";
+      const content = document.createElement("div");
+      content.className = "video-filters-content";
       const heading = document.createElement("div");
-      heading.className = "panel-heading";
+      heading.className = "video-filters-heading";
       const title = document.createElement("strong");
       title.textContent = "Video filters";
-      const switchControl = document.createElement("div");
-      switchControl.className = "eq-switch-control";
-      const off = document.createElement("span");
-      off.textContent = "OFF";
-      const on = document.createElement("span");
-      on.textContent = "ON";
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.className = "eq-switch";
-      toggle.setAttribute("role", "switch");
-      toggle.setAttribute("aria-label", "Enable video filters");
-      const thumb = document.createElement("span");
-      thumb.className = "eq-switch-thumb";
-      toggle.append(thumb);
-      toggle.onclick = () => filters.setEnabled(!filters.snapshot().enabled);
-      switchControl.append(off, toggle, on);
-      heading.append(title, switchControl);
-      const actions = document.createElement("div");
-      actions.className = "eq-preset-row";
-      const compare = document.createElement("button");
-      compare.type = "button";
-      compare.className = "video-compare";
-      compare.onclick = () => filters.setOriginal(!filters.snapshot().original);
+      const mirror = iconButton(
+        "Mirror horizontally",
+        '<path d="M12 3v2m0 3v2m0 4v2m0 3v2M3 6l6 3v6l-6 3Zm18 0-6 3v6l6 3Z"/>',
+      );
+      mirror.onclick = () =>
+        filters.setMirror(!filters.snapshot().settings.mirror);
       const reset = iconButton(
         "Reset all video filters",
         '<path d="M3 10a9 9 0 1 1 2.7 8.4M3 4v6h6"/>',
       );
-      reset.classList.add("eq-restore");
       reset.onclick = () => filters.reset();
-      actions.append(compare, reset);
-      const hint = document.createElement("p");
-      hint.className = "eq-preset-hint";
-      hint.textContent = "Make it yours · edits save automatically";
+      const toggle = iconButton(
+        "Enable video filters",
+        '<path d="M12 2v10M6.3 5.3a9 9 0 1 0 11.4 0"/>',
+      );
+      toggle.setAttribute("role", "switch");
+      toggle.onclick = () => filters.setEnabled(!filters.snapshot().enabled);
+      for (const button of [mirror, reset, toggle]) {
+        button.title = button.getAttribute("aria-label")!;
+      }
+      heading.append(title, mirror, reset, toggle);
       const basic = document.createElement("div");
       basic.className = "video-filter-controls";
-      const experiments = document.createElement("fieldset");
-      experiments.className = "video-experiments";
-      const legend = document.createElement("legend");
-      legend.textContent = "Experimental · try it out";
-      const experimentalHint = document.createElement("p");
-      experimentalHint.className = "eq-note";
-      experimentalHint.textContent =
-        "Zoom crops the edges. Mirror flips the picture, including any text in the video.";
-      experiments.append(legend);
       const controls = VIDEO_CONTROLS.map((control) => {
         const label = document.createElement("label");
         label.className = "video-filter-control";
+        label.title = control.label;
         const caption = document.createElement("span");
-        caption.textContent = control.label;
+        caption.className = "video-filter-icon";
+        caption.setAttribute("aria-hidden", "true");
+        caption.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+          controlIcons[control.id] +
+          "</svg>";
         const output = document.createElement("output");
         const input = document.createElement("input");
         input.type = "range";
         input.min = String(control.min);
         input.max = String(control.max);
         input.step = "1";
-        input.title = "Scroll to adjust by 1% · double-click to reset";
         input.setAttribute("aria-label", control.label);
         input.setAttribute("aria-orientation", "horizontal");
         input.oninput = () => filters.setValue(control.id, Number(input.value));
@@ -97,46 +92,19 @@ export function videoFilters(filters: VideoFiltersPort): Tool {
           },
           { passive: false },
         );
-        label.append(caption, output, input);
-        (control.id === "zoom" ? experiments : basic).append(label);
+        label.append(caption, input, output);
+        basic.append(label);
         return { control, input, output };
       });
-      const mirrorLabel = createCheckableMenuItem({
-        label: "Mirror horizontally",
-        checked: false,
-        onChange: (checked) => filters.setMirror(checked),
-      });
-      const mirror = mirrorLabel.querySelector("input")!;
-      experiments.append(mirrorLabel, experimentalHint);
-      const footer = document.createElement("div");
-      footer.className = "eq-footer";
-      footer.textContent = "Scroll to fine-tune · 1% · double-click to reset";
-      const status = document.createElement("p");
-      status.className = "eq-note";
-      status.setAttribute("role", "status");
-      panel.append(heading, actions, hint, basic, experiments, footer, status);
+      content.append(heading, basic);
+      panel.append(content);
       group.append(trigger, panel);
       container.append(group);
       const popover = createPopover(trigger, panel);
-      // Comparison is temporary and must never remain active in a closed panel.
-      const visibility = new MutationObserver(() => {
-        if (panel.hidden) filters.setOriginal(false);
-      });
-      visibility.observe(panel, {
-        attributes: true,
-        attributeFilter: ["hidden"],
-      });
       const unsubscribe = filters.subscribe((state) => {
         trigger.disabled = !state.available;
-        trigger.dataset.modified = String(
-          state.available && state.enabled && !state.original,
-        );
+        trigger.dataset.modified = String(state.available && state.enabled);
         toggle.setAttribute("aria-checked", String(state.enabled));
-        compare.textContent = state.original
-          ? "Show adjusted"
-          : "Compare original";
-        compare.setAttribute("aria-pressed", String(state.original));
-        compare.disabled = !state.enabled;
         reset.disabled = Object.entries(DEFAULT_VIDEO_FILTERS).every(
           ([key, value]) =>
             state.settings[key as keyof typeof state.settings] === value,
@@ -144,22 +112,14 @@ export function videoFilters(filters: VideoFiltersPort): Tool {
         controls.forEach(({ control, input, output }) => {
           const value = state.settings[control.id];
           input.value = String(value);
-          input.setAttribute("aria-valuetext", `${value}%`);
-          output.textContent = `${value}%`;
+          input.setAttribute("aria-valuetext", value + "%");
+          output.textContent = value + "%";
         });
-        mirror.checked = state.settings.mirror;
-        status.textContent = state.original
-          ? "Showing original · click Show adjusted to return"
-          : state.enabled
-            ? ""
-            : "Filters are OFF · your settings are saved";
-        status.hidden = !status.textContent;
+        mirror.setAttribute("aria-pressed", String(state.settings.mirror));
         if (!state.available) popover.close();
       });
       return () => {
         unsubscribe();
-        visibility.disconnect();
-        filters.setOriginal(false);
         popover.dispose();
         group.remove();
       };

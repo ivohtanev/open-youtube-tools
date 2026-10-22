@@ -48,25 +48,27 @@ it("supports horizontal sliders, bounded wheel steps, zoom modifiers, mirror and
   input.value = "120";
   input.dispatchEvent(new Event("input"));
   expect(filters.snapshot().settings.brightness).toBe(120);
-  document.querySelector<HTMLElement>(".checkable-menu-item span")!.click();
+  button("Mirror horizontally").click();
   expect(filters.snapshot().settings.mirror).toBe(true);
   button("Reset all video filters").click();
   expect(filters.snapshot().settings.brightness).toBe(100);
   expect(filters.snapshot().settings.mirror).toBe(false);
 });
-it("ends temporary comparison on panel dismissal and keeps processing on unmount", async () => {
+it("keeps adjustments active on dismissal and unmount", () => {
   filters.setEnabled(true);
   filters.setValue("brightness", 120);
   button("Video filters").click();
-  document.querySelector<HTMLButtonElement>(".video-compare")!.click();
-  expect(filters.snapshot().original).toBe(true);
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-  await Promise.resolve();
-  expect(filters.snapshot().original).toBe(false);
+  expect(
+    document.querySelector<HTMLElement>(".video-filters-panel")!.hidden,
+  ).toBe(true);
   expect(document.querySelector("video")!.style.filter).toBe(
     "brightness(120%)",
   );
   unmount();
   expect(filters.snapshot().enabled).toBe(true);
+  expect(document.querySelector("video")!.style.filter).toBe(
+    "brightness(120%)",
+  );
   expect(document.querySelector(".video-filters-panel")).toBeNull();
 });

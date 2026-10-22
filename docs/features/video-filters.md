@@ -2,18 +2,17 @@
 
 ## Status
 
-Implemented for regular YouTube watch pages. Automated adapter and control tests pass. Live Chromium/YouTube visual acceptance remains pending; zoom and mirror are explicitly experimental.
+Implemented for regular YouTube watch pages. Automated adapter and control tests pass. A headless Chromium fixture measured a 320 × 108px panel at 1280 × 720 and 640 × 360 viewports. At 280 × 320 it uses one column (264 × 172px). Top/bottom placement stayed inside the viewport without horizontal overflow; the arrow remains outside the independently scrolling content. Live YouTube visual acceptance remains pending.
 
 ## User behavior
 
-Click **Video filters** beside EQ. The panel reuses EQ's dark panel, blue accents, OFF/ON switch, reset icon and autosave presentation.
+Click **Video filters** beside EQ. The compact panel has two columns of icon-labelled sliders. Mirror, reset and power icons share the header. Hover titles and accessible names identify the controls; values remain visible. There are no instruction or status text rows.
 
 - Brightness: 50–150%; contrast: 50–150%; saturation: 0–200%. All default to 100%.
 - Horizontal sliders support native keyboard interaction and mouse-wheel steps of 1%. Ctrl/Meta-wheel keeps browser behavior. Double-click a slider to restore 100%.
 - First use starts OFF. Adjustments can be edited while OFF; turning ON applies them. The preference and settings survive reloads, navigation and browser restarts.
-- **Compare original** temporarily bypasses all adjustments. **Show adjusted**, changing a setting, closing the panel or removing its controls ends comparison. Comparison is never saved.
-- The reset icon restores all values, including experimental controls, without changing ON/OFF.
-- The bottom experimental section provides zoom (100–150%, cropped to the original frame) and horizontal mirror. Mirroring also reverses text baked into the video. Both are saved with the basic settings.
+- The reset icon restores all values, including zoom and mirror, without changing ON/OFF.
+- The main controls include zoom (100–150%, cropped to the original frame) and horizontal mirror. Mirroring also reverses text baked into the video. Both are saved with the other settings.
 
 Hiding the tool through Functions keeps processing active, matching EQ. Turn it OFF before hiding it if processing should stop.
 
@@ -31,20 +30,20 @@ Storage keys are `videoFilterSettings` and `videoFiltersEnabled`. Settings write
 
 The adapter reuses `findVideo` and the existing mutation/navigation observation pattern. It releases the previous video on replacement or departure from `/watch`, then applies current settings when a watch video becomes available. Same-element video changes retain settings.
 
-The adapter owns `filter`, individual CSS `scale` and (for zoom) `clip-path`. Original inline values and priorities are retained. Bypass, reset and disposal restore them only while the adapter still owns the applied value; later external changes are preserved. An explicit subsequent adjustment takes ownership again and remembers the latest external value. Neutral settings leave no identity filter or transform override. No frame loop is added.
+The adapter owns `filter`, individual CSS `scale` and (for zoom) `clip-path`. Original inline values and priorities are retained. Turning OFF, reset and disposal restore them only while the adapter still owns the applied value; later external changes are preserved. An explicit subsequent adjustment takes ownership again and remembers the latest external value. Neutral settings leave no identity filter or transform override. No frame loop is added.
 
 ## Tests and manual acceptance
 
-Automated tests cover malformed settings, bounds, combined filters, bypass, reset, style ownership, replacement, route transitions, debounced persistence, reload restoration, disposal, wheel controls, modifier keys, mirror and comparison dismissal.
+Automated tests cover malformed settings, bounds, combined filters, bypass, reset, style ownership, replacement, route transitions, debounced persistence, reload restoration, disposal, wheel controls, modifier keys, mirror and panel dismissal.
 
 Manual checks still required:
 
-1. Load the build, enable filters and adjust all three sliders on a watch page; verify horizontal layout, keyboard focus and wheel behavior.
-2. Compare original, dismiss with Escape/outside click, and reopen. Confirm the adjusted picture returns without changing saved values.
+1. Load the build, enable filters and adjust all four sliders on a watch page; verify horizontal layout, keyboard focus and wheel behavior.
+2. Dismiss with Escape/outside click and reopen. Confirm adjustments remain applied without changing saved values.
 3. Reload and navigate between videos, including back/forward, ads and live playback. Verify the ON/OFF preference and settings.
 4. Try normal, theater, expanded, fullscreen and scroll mini-player modes. With zoom, check clipping and control alignment. With mirror, check that native controls/captions remain unchanged.
 5. Verify reset, individual double-click reset and toggling OFF restore the original picture.
-6. Test short/narrow windows and original screenshot capture. Compare representative 1080p, 4K60 and HDR playback for visual quality and dropped frames.
+6. Test short/narrow windows, panel placement near viewport edges, the unclipped arrow and original screenshot capture. Compare representative 1080p, 4K60 and HDR playback for visual quality and dropped frames.
 
 ## Known limitations
 

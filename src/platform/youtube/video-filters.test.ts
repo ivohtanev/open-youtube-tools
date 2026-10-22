@@ -48,11 +48,6 @@ it("starts off, composes basic filters and bypasses without losing settings", ()
   expect(video.style.filter).toBe(
     "brightness(115%) contrast(110%) saturate(125%)",
   );
-  filters.setOriginal(true);
-  expect(video.style.filter).toBe("");
-  expect(filters.snapshot().settings.brightness).toBe(115);
-  filters.setOriginal(false);
-  expect(video.style.filter).toContain("brightness(115%)");
   filters.setEnabled(false);
   expect(video.style.filter).toBe("");
   filters.setEnabled(true);
@@ -71,12 +66,12 @@ it("restores styles and priorities but preserves another actor's later changes",
   });
   expect(video.style.scale).toBe("-1.25 1.25");
   expect(video.style.clipPath).toContain("inset(");
-  filters.setOriginal(true);
+  filters.setEnabled(false);
   expect(video.style.scale).toBe("0.9");
   expect(video.style.clipPath).toBe("inset(2%)");
   expect(video.style.filter).toBe("contrast(80%)");
   expect(video.style.getPropertyPriority("filter")).toBe("important");
-  filters.setOriginal(false);
+  filters.setEnabled(true);
   video.style.setProperty("filter", "brightness(90%)");
   filters.dispose();
   expect(video.style.filter).toBe("brightness(90%)");
@@ -106,7 +101,7 @@ it("releases replacements and off-route videos, then reapplies saved settings", 
   expect(replacement.style.filter).toBe("brightness(110%)");
 });
 
-it("debounces settings, flushes on pagehide/disposal and never persists comparison", () => {
+it("debounces settings and flushes on pagehide/disposal", () => {
   vi.useFakeTimers();
   const persistSettings = vi.fn();
   const persistEnabled = vi.fn();
@@ -118,9 +113,6 @@ it("debounces settings, flushes on pagehide/disposal and never persists comparis
   vi.advanceTimersByTime(200);
   expect(persistSettings).toHaveBeenCalledTimes(1);
   expect(persistSettings.mock.calls[0]![0].brightness).toBe(111);
-  filters.setOriginal(true);
-  vi.advanceTimersByTime(200);
-  expect(persistSettings).toHaveBeenCalledTimes(1);
   filters.setMirror(true);
   window.dispatchEvent(new Event("pagehide"));
   expect(persistSettings).toHaveBeenCalledTimes(2);

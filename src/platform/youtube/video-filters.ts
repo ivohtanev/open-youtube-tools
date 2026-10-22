@@ -21,7 +21,6 @@ export function createVideoFilters(
 ): VideoFiltersPort & { dispose(): void } {
   let settings = parseVideoFilters(options.settings);
   let enabled = options.enabled === true;
-  let original = false;
   let video: HTMLVideoElement | null = null;
   let disposed = false;
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -33,7 +32,6 @@ export function createVideoFilters(
   const snapshot = (): VideoFiltersState => ({
     available: !!video,
     enabled,
-    original,
     settings: { ...settings },
   });
   const emit = () => listeners.forEach((listener) => listener(snapshot()));
@@ -79,7 +77,7 @@ export function createVideoFilters(
     previous.applied = video.style.getPropertyValue(property);
   };
   const apply = () => {
-    const active = enabled && !original;
+    const active = enabled;
     setStyle("filter", active ? videoFilterCss(settings) : "");
     const zoom = settings.zoom / 100;
     // Keep the scaled picture within its original frame, including the mini player.
@@ -100,7 +98,6 @@ export function createVideoFilters(
     if (next === video) return;
     for (const property of [...owned.keys()]) release(property);
     video = next;
-    original = false;
     apply();
     emit();
   };
@@ -111,7 +108,6 @@ export function createVideoFilters(
     options.persistSettings?.({ ...settings });
   };
   const changed = () => {
-    original = false;
     apply();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 200);
@@ -128,7 +124,6 @@ export function createVideoFilters(
     setEnabled(value) {
       if (disposed) return;
       enabled = value;
-      original = false;
       options.persistEnabled?.(value);
       apply();
       emit();
@@ -142,12 +137,6 @@ export function createVideoFilters(
       if (disposed) return;
       settings.mirror = value;
       changed();
-    },
-    setOriginal(value) {
-      if (disposed || original === value) return;
-      original = value && enabled;
-      apply();
-      emit();
     },
     reset() {
       if (disposed) return;

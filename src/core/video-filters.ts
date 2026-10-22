@@ -47,7 +47,6 @@ export function videoFilterCss(settings: VideoFilterSettings): string {
 export interface VideoFiltersState {
   available: boolean;
   enabled: boolean;
-  original: boolean;
   settings: VideoFilterSettings;
 }
 
@@ -56,7 +55,6 @@ export interface VideoFiltersPort {
   setEnabled(enabled: boolean): void;
   setValue(control: VideoControl, value: number): void;
   setMirror(mirror: boolean): void;
-  setOriginal(original: boolean): void;
   reset(): void;
   subscribe(listener: (state: VideoFiltersState) => void): () => void;
 }
