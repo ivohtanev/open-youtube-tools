@@ -6,13 +6,151 @@ import {
   DEFAULT_EQ_APPROACH,
   EQ_APPROACHES,
 } from "../../core/equalizer-approaches";
+import { EQ_PRESETS } from "../../core/equalizer-presets";
 
 afterEach(() => document.body.replaceChildren());
+
+it("applies presets to the existing graph without changing routing, approach or saved User", async () => {
+  const {
+    audio,
+    context,
+    filters,
+    persist,
+    persistProfile,
+    persistEnabled,
+    persistApproach,
+  } = fixture([5.5, -2], "response");
+  await audio.setEnabled(true);
+  audio.setPreset("music");
+  expect(audio.snapshot()).toMatchObject({
+    enabled: true,
+    requestedEnabled: true,
+    approach: "response",
+    preset: "music",
+    gains: EQ_PRESETS[1].gains,
+  });
+  EQ_PRESETS[1].gains.forEach((gain, index) => {
+    expect(filters[index]!.gain.setTargetAtTime).toHaveBeenLastCalledWith(
+      gain,
+      0,
+      0.02,
+    );
+  });
+  expect(persistProfile.mock.lastCall![0]).toMatchObject({
+    preset: "music",
+    userGains: [5.5, -2, 0, 0, 0, 0, 0, 0, 0, 0],
+  });
+  audio.setGain(0, 12);
+  audio.reset();
+  expect(persistProfile).toHaveBeenCalledTimes(1);
+  expect(persist).not.toHaveBeenCalled();
+  expect(audio.snapshot().gains).toEqual(EQ_PRESETS[1].gains);
+  audio.setPreset("user");
+  expect(audio.snapshot().gains.slice(0, 2)).toEqual([5.5, -2]);
+  audio.setGain(0, 4);
+  expect(persist).toHaveBeenLastCalledWith([4, -2, 0, 0, 0, 0, 0, 0, 0, 0]);
+  expect(persistProfile.mock.lastCall![0].userGains[0]).toBe(4);
+  expect(context.createMediaElementSource).toHaveBeenCalledOnce();
+  expect(persistEnabled).toHaveBeenCalledExactlyOnceWith(true);
+  expect(persistApproach).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
+it("restores selected presets while OFF and ON and preserves them across video replacement", async () => {
+  for (const enabled of [false, true]) {
+    const { audio, context, makeContext, persistProfile } = fixture(
+      [9],
+      "compressor",
+      enabled,
+      { preset: "podcast", userGains: [3] },
+    );
+    expect(audio.snapshot().gains).toEqual(EQ_PRESETS[2].gains);
+    if (enabled) {
+      await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+      const replacement = document.createElement("video");
+      replacement.className = "html5-main-video";
+      document.querySelector("video")!.replaceWith(replacement);
+      document.dispatchEvent(new Event("yt-navigate-finish"));
+      await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+      expect(context.createMediaElementSource).toHaveBeenCalledTimes(2);
+    } else {
+      audio.setPreset("movie");
+      expect(makeContext).not.toHaveBeenCalled();
+    }
+    audio.setPreset("user");
+    expect(audio.snapshot().gains[0]).toBe(3);
+    const calls = persistProfile.mock.calls.length;
+    audio.dispose();
+    audio.setPreset("music");
+    audio.setGain(0, 12);
+    audio.reset();
+    expect(persistProfile).toHaveBeenCalledTimes(calls);
+  }
+});
+
+it("reveals presets above the sliders, locks built-ins and restores editable User on remount", () => {
+  const { audio, makeContext } = fixture([4]);
+  const player = createPlayer(document);
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = host.attachShadow({ mode: "open" });
+  const container = document.createElement("div");
+  root.append(container);
+  let dispose = equalizer(audio).mount(container, player);
+  const buttons = () => Array.from(container.querySelectorAll("button"));
+  const button = (text: string) =>
+    buttons().find((item) => item.textContent === text)!;
+  button("Presets").click();
+  expect(button("Presets").getAttribute("aria-expanded")).toBe("true");
+  expect(
+    container.querySelector<HTMLElement>(".eq-presets-reveal")!.inert,
+  ).toBe(false);
+  expect(buttons().indexOf(button("Presets"))).toBeLessThan(
+    buttons().indexOf(button("Reset")),
+  );
+  const overlay = container.querySelector<HTMLElement>(".eq-preset-overlay")!;
+  const sliders = Array.from(
+    container.querySelectorAll<HTMLInputElement>('input[type="range"]'),
+  );
+  for (const label of ["Music", "Podcast", "Movie"]) {
+    button(label).click();
+    expect(button(label).getAttribute("aria-pressed")).toBe("true");
+    expect(sliders.every((input) => input.disabled)).toBe(true);
+    expect(overlay.hidden).toBe(false);
+    expect(overlay.textContent).toBe("Select User to adjust EQ.");
+    expect(button("Reset").disabled).toBe(true);
+  }
+  button("Presets").click();
+  expect(
+    container.querySelector<HTMLElement>(".eq-presets-reveal")!.inert,
+  ).toBe(true);
+  expect(sliders.every((input) => input.disabled)).toBe(true);
+  dispose();
+  dispose = equalizer(audio).mount(container, player);
+  expect(button("Movie").getAttribute("aria-pressed")).toBe("true");
+  button("Presets").click();
+  button("User").click();
+  const input = container.querySelector<HTMLInputElement>(
+    'input[type="range"]',
+  )!;
+  expect(input.disabled).toBe(false);
+  expect(input.value).toBe("4");
+  input.value = "5.5";
+  input.dispatchEvent(new Event("input"));
+  expect(audio.snapshot().gains[0]).toBe(5.5);
+  button("Reset").click();
+  expect(audio.snapshot().gains).toEqual(Array(10).fill(0));
+  expect(makeContext).not.toHaveBeenCalled();
+  dispose();
+  player.dispose();
+  audio.dispose();
+});
 
 function fixture(
   saved: unknown = [],
   savedApproach?: unknown,
   savedEnabled?: unknown,
+  savedProfile?: unknown,
 ) {
   history.replaceState(null, "", "/watch?v=test");
   document.body.innerHTML =
@@ -65,6 +203,7 @@ function fixture(
   const persist = vi.fn();
   const persistApproach = vi.fn();
   const persistEnabled = vi.fn();
+  const persistProfile = vi.fn();
   const audio = createEqualizer(document, {
     gains: saved,
     approach: savedApproach,
@@ -73,6 +212,8 @@ function fixture(
     makeContext,
     persistApproach,
     persistEnabled,
+    profile: savedProfile,
+    persistProfile,
   });
   return {
     audio,
@@ -84,6 +225,7 @@ function fixture(
     persist,
     persistApproach,
     persistEnabled,
+    persistProfile,
   };
 }
 

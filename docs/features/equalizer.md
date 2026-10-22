@@ -10,7 +10,8 @@ automated checks do not certify the browser or device's audio output.
 Click the Equalizer toolbar icon to open its panel. An OFF/ON switch controls processing;
 opening the panel or editing a slider does not enable EQ. The icon glows only
 while processing is enabled and the audio context is running. Reset sets all
-bands to 0 dB without changing ON/OFF. OFF is on the left, ON on the right.
+User bands to 0 dB without changing ON/OFF. Reset is disabled for built-in presets.
+OFF is on the left, ON on the right.
 The switch is a keyboard-accessible button with `role="switch"` and
 `aria-checked` reflecting the user's saved preference. The icon reflects actual
 processing, so it stays unlit while a saved ON preference waits for activation.
@@ -20,6 +21,37 @@ The ten peaking bands are 31.25, 62.5, 125, 250, 500, 1000, 2000, 4000, 8000 and
 are bounded below the runtime Nyquist frequency. Gains, approach and ON/OFF
 preference persist in extension local storage across refreshes, videos and
 browser restarts. First use starts OFF. Changes use 20 ms smoothing.
+
+## Presets
+
+The Presets button to the left of Reset slides open four choices above the bands:
+User, Music, Podcast and Movie. The selected button is marked with `aria-pressed`.
+The collapsed row is inert, so hidden controls are excluded from keyboard navigation.
+Reduced-motion preferences disable the slide transition.
+
+User is editable and retains its own saved gains. Built-in presets disable all ten
+sliders and Reset, with a 50% black overlay reading “Select User to adjust EQ.”
+Returning to User restores the personal curve without copying any built-in values.
+Preset selection does not change ON/OFF, the gain approach or audio routing; it
+uses the existing gain smoothing and compensation. Selection while OFF is saved
+without starting an audio context.
+
+Built-in curves are gentle starting points, not content analysis or automatic
+loudness normalization. Edit `EQ_PRESETS` in `src/core/equalizer-presets.ts` to tune
+them. Gains follow the ten frequencies above, in dB:
+
+| Preset  | 31  | 63  | 125 | 250 | 500 | 1k  | 2k  | 4k  | 8k  | 16k |
+| ------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Music   | 2   | 2   | 1   | 0   | -1  | 0   | 1   | 1.5 | 2   | 1   |
+| Podcast | -6  | -4  | -2  | -1  | 0   | 1.5 | 3   | 2   | 0   | -2  |
+| Movie   | 3   | 2.5 | 1.5 | 0   | -1  | 0   | 1.5 | 2   | 1   | 0   |
+
+`equalizerProfile` stores `{ preset, userGains }` together in one local-storage
+record. On older installations, `equalizerGains` supplies the initial User curve;
+once a profile exists, it takes precedence. Legacy gains continue to be updated
+only by User edits/reset. Selecting a preset never overwrites User, including
+across reloads, toolbar remounts or video changes. Invalid preset names fall back
+to User; non-finite gains become zero and out-of-range gains are clamped.
 
 ## EQ approaches
 
@@ -59,7 +91,7 @@ Windows, driver and device processing after the Web Audio graph.
 
 ## Scope and non-goals
 
-Regular YouTube watch pages only. Presets, tab capture,
+Regular YouTube watch pages only. Tab capture,
 recording, parametric Q controls and remote casting support are outside this prototype.
 
 ## Contracts and dependencies
@@ -73,6 +105,13 @@ point persists `equalizerGains`, `equalizerApproach` and `equalizerEnabled`
 through the existing storage permission. Only explicit switch changes write
 `equalizerEnabled`; navigation, failures and disposal preserve it. No dependencies
 or extension permissions are added.
+
+Preset definitions, validation, legacy migration and User editing rules live in
+`src/core/equalizer-presets.ts`. This module has no DOM, YouTube, Web Audio or
+extension-storage dependency. The adapter applies the resulting gains; the entry
+point supplies persistence callbacks. A future general-purpose extension or
+desktop host can reuse this profile logic with its own routing and storage.
+This change does not add capture of other tabs, sites or system audio.
 
 ## Lifecycle and failure behavior
 
@@ -112,6 +151,13 @@ response estimation, compressor routing/bypass, dropdown interaction, saved ON/O
 restoration, non-watch navigation, autoplay waiting/cancellation/retry and the
 panel's ON-only icon illumination. Filter responses in unit tests are synthetic;
 real DSP and audio output still require the following manual acceptance checks.
+
+Preset regression tests also cover legacy migration, invalid storage, isolated
+User gains, locked edits/reset, active graph reuse, OFF/ON restoration, video
+replacement, Shadow DOM controls and remounting. In a browser, verify the slide
+transition, overlay legibility, keyboard navigation and each preset's audible
+effect. Edit User, visit every preset, reload with a preset selected, then return
+to User and confirm the personal curve survives.
 
 1. Reload the unpacked extension from `.output/chrome-mv3`, then reload a YouTube
    watch page. On first use, confirm OFF, no glow, ten labeled sliders and Boost +

@@ -6,6 +6,7 @@ import {
   parseApproach,
 } from "../../core/equalizer-approaches";
 import { createPopover, iconButton } from "../../toolbar/popover";
+import { EQ_PRESETS } from "../../core/equalizer-presets";
 
 export function equalizer(audio: EqualizerPort): Tool {
   const icon =
@@ -45,7 +46,37 @@ export function equalizer(audio: EqualizerPort): Tool {
       const reset = document.createElement("button");
       reset.textContent = "Reset";
       reset.onclick = () => audio.reset();
-      heading.append(title, switchControl, reset);
+      const presetsToggle = document.createElement("button");
+      presetsToggle.type = "button";
+      presetsToggle.textContent = "Presets";
+      presetsToggle.setAttribute("aria-expanded", "false");
+      const actions = document.createElement("div");
+      actions.className = "eq-heading-actions";
+      actions.append(presetsToggle, reset);
+      heading.append(title, switchControl, actions);
+      const presetsReveal = document.createElement("div");
+      presetsReveal.className = "eq-presets-reveal";
+      presetsReveal.inert = true;
+      presetsReveal.setAttribute("aria-hidden", "true");
+      const presets = document.createElement("div");
+      presets.className = "eq-presets";
+      presets.setAttribute("role", "group");
+      presets.setAttribute("aria-label", "EQ presets");
+      const presetButtons = EQ_PRESETS.map((preset) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = preset.label;
+        button.onclick = () => audio.setPreset(preset.id);
+        presets.append(button);
+        return button;
+      });
+      presetsReveal.append(presets);
+      presetsToggle.onclick = () => {
+        const expanded = presetsReveal.classList.toggle("expanded");
+        presetsReveal.inert = !expanded;
+        presetsReveal.setAttribute("aria-hidden", String(!expanded));
+        presetsToggle.setAttribute("aria-expanded", String(expanded));
+      };
       const approachLabel = document.createElement("label");
       approachLabel.className = "eq-approach";
       const approachCaption = document.createElement("span");
@@ -67,6 +98,13 @@ export function equalizer(audio: EqualizerPort): Tool {
       level.className = "eq-note";
       const bands = document.createElement("div");
       bands.className = "eq-bands";
+      const bandArea = document.createElement("div");
+      bandArea.className = "eq-band-area";
+      const locked = document.createElement("div");
+      locked.className = "eq-preset-overlay";
+      locked.textContent = "Select User to adjust EQ.";
+      locked.hidden = true;
+      bandArea.append(bands, locked);
       const controls = EQ_FREQUENCIES.map((frequency, index) => {
         const label = document.createElement("label");
         label.className = "eq-band";
@@ -100,13 +138,18 @@ export function equalizer(audio: EqualizerPort): Tool {
         approachLabel,
         approachNote,
         level,
-        bands,
+        presetsReveal,
+        bandArea,
         note,
         status,
       );
       group.append(trigger, panel);
       container.append(group);
       const popover = createPopover(trigger, panel);
+      presetsReveal.id = `${panel.id}-presets`;
+      presetsToggle.setAttribute("aria-controls", presetsReveal.id);
+      locked.id = `${panel.id}-preset-lock`;
+      bands.setAttribute("aria-describedby", locked.id);
       approachNote.id = `${panel.id}-approach-help`;
       approachSelect.setAttribute("aria-describedby", approachNote.id);
       let available = player.snapshot().available;
@@ -124,7 +167,20 @@ export function equalizer(audio: EqualizerPort): Tool {
             : "EQ is OFF. Your approach and band settings will apply when enabled.";
         status.textContent = state.error;
         status.hidden = !state.error;
+        const isLocked = state.preset !== "user";
+        locked.hidden = !isLocked;
+        reset.disabled = isLocked;
+        reset.title = isLocked
+          ? "Select User to reset your EQ."
+          : "Reset User EQ";
+        presetButtons.forEach((button, index) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(EQ_PRESETS[index]!.id === state.preset),
+          );
+        });
         controls.forEach(({ input, output }, i) => {
+          input.disabled = isLocked;
           input.value = String(state.gains[i]);
           output.textContent = `${(state.gains[i] ?? 0) > 0 ? "+" : ""}${state.gains[i]}`;
           input.setAttribute("aria-valuetext", `${state.gains[i]} dB`);

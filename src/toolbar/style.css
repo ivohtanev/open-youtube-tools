@@ -306,6 +306,49 @@ button:disabled {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+.eq-heading-actions {
+  display: flex;
+  gap: 6px;
+}
+.eq-presets-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+.eq-presets-reveal.expanded {
+  grid-template-rows: 1fr;
+}
+.eq-presets {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+.eq-presets button {
+  flex: 1;
+  min-width: 0;
+  margin-top: 12px;
+  border-color: #ffffff30;
+}
+.eq-presets button[aria-pressed="true"] {
+  background: #8ab4f820;
+  border-color: #8ab4f8;
+}
+.eq-band-area {
+  position: relative;
+}
+.eq-preset-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 50%);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
 .eq-band input {
   writing-mode: vertical-lr;
   direction: rtl;

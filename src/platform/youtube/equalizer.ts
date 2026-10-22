@@ -6,6 +6,10 @@ import {
   type EqualizerApproachId,
 } from "../../core/equalizer-approaches";
 import { configureCompressor } from "../../core/equalizer-approaches/compressor";
+import {
+  createEqualizerProfile,
+  type EqualizerProfile,
+} from "../../core/equalizer-presets";
 
 import {
   EQ_FREQUENCIES,
@@ -27,6 +31,8 @@ const graphs = new WeakMap<HTMLVideoElement, Graph>();
 
 interface EqualizerOptions {
   gains?: unknown;
+  profile?: unknown;
+  persistProfile?: (profile: EqualizerProfile) => void;
   approach?: unknown;
   enabled?: unknown;
   persistGains?: (gains: number[]) => void;
@@ -45,15 +51,11 @@ export function createEqualizer(
     persistGains: persist = () => {},
     persistApproach = () => {},
     persistEnabled = () => {},
+    persistProfile = () => {},
     makeContext = () => new AudioContext(),
   } = options;
-  const gains = EQ_FREQUENCIES.map((_, i) =>
-    Array.isArray(saved) &&
-    typeof saved[i] === "number" &&
-    Number.isFinite(saved[i])
-      ? Math.max(-12, Math.min(12, saved[i]))
-      : 0,
-  );
+  const profile = createEqualizerProfile(options.profile, saved);
+  let gains = profile.gains();
   let enabled = false;
   let requestedEnabled = options.enabled === true;
   let approach = parseApproach(savedApproach);
@@ -73,6 +75,7 @@ export function createEqualizer(
     requestedEnabled,
     pending,
     gains: [...gains],
+    preset: profile.snapshot().preset,
     approach,
     preampDb,
     error,
@@ -274,16 +277,18 @@ export function createEqualizer(
       }
     },
     setGain(index, gain) {
-      if (
-        !Number.isInteger(index) ||
-        index < 0 ||
-        index >= gains.length ||
-        !Number.isFinite(gain)
-      )
-        return;
-      gains[index] = Math.max(-12, Math.min(12, gain));
+      if (disposed || !profile.setGain(index, gain)) return;
+      gains = profile.gains();
       apply();
       persist([...gains]);
+      persistProfile(profile.snapshot());
+      emit();
+    },
+    setPreset(value) {
+      if (disposed || !profile.select(value)) return;
+      gains = profile.gains();
+      apply();
+      persistProfile(profile.snapshot());
       emit();
     },
     setApproach(value) {
@@ -294,9 +299,11 @@ export function createEqualizer(
       emit();
     },
     reset() {
-      gains.fill(0);
+      if (disposed || !profile.reset()) return;
+      gains = profile.gains();
       apply();
       persist([...gains]);
+      persistProfile(profile.snapshot());
       emit();
     },
     subscribe(listener) {
