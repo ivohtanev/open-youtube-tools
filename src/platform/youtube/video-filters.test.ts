@@ -40,11 +40,12 @@ it("validates saved settings, clamps finite values and rejects non-numeric input
 
 it("starts off, composes basic filters and bypasses without losing settings", () => {
   filters = createVideoFilters(document);
+  expect(filters.snapshot().enabled).toBe(false);
+  expect(video.style.filter).toBe("");
   filters.setValue("brightness", 115);
   filters.setValue("contrast", 110);
   filters.setValue("saturation", 125);
-  expect(video.style.filter).toBe("");
-  filters.setEnabled(true);
+  expect(filters.snapshot().enabled).toBe(true);
   expect(video.style.filter).toBe(
     "brightness(115%) contrast(110%) saturate(125%)",
   );
@@ -54,6 +55,25 @@ it("starts off, composes basic filters and bypasses without losing settings", ()
   filters.reset();
   expect(video.style.filter).toBe("");
   expect(filters.snapshot().enabled).toBe(true);
+});
+
+it("automatically enables and saves ON for sliders, mirror and reset", () => {
+  const persistEnabled = vi.fn();
+  filters = createVideoFilters(document, { persistEnabled });
+  const edits = [
+    () => filters.setValue("zoom", 120),
+    () => filters.setMirror(true),
+    () => filters.reset(),
+  ];
+  for (const edit of edits) {
+    filters.setEnabled(false);
+    persistEnabled.mockClear();
+    edit();
+    expect(filters.snapshot().enabled).toBe(true);
+    expect(persistEnabled).toHaveBeenCalledExactlyOnceWith(true);
+    filters.setValue("contrast", 110);
+    expect(persistEnabled).toHaveBeenCalledTimes(1);
+  }
 });
 
 it("restores styles and priorities but preserves another actor's later changes", () => {

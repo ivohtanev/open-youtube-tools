@@ -108,6 +108,10 @@ export function createVideoFilters(
     options.persistSettings?.({ ...settings });
   };
   const changed = () => {
+    if (!enabled) {
+      enabled = true;
+      options.persistEnabled?.(true);
+    }
     apply();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 200);

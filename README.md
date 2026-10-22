@@ -25,7 +25,7 @@ Click the EQ icon for ten frequency sliders, four editable presets, an EQ approa
 
 ### Video filters
 
-Click the video filters icon beside EQ for brightness, contrast and saturation with horizontal sliders. Scroll to adjust by 1%, double-click a slider to reset it, or use the reset icon to restore everything. OFF/ON and settings save automatically, like EQ; first use starts OFF. The compact two-column panel uses icons for its sliders, with cropped zoom alongside brightness, contrast and saturation, plus mirror, reset and power icons in the header. Screenshots still capture original pixels. Live visual acceptance is pending. See [video filters](docs/features/video-filters.md).
+Click the video filters icon beside EQ for brightness, contrast and saturation with horizontal sliders. Scroll to adjust by 1%, double-click a slider to reset it, or use the reset icon to restore everything. OFF/ON and settings save automatically, like EQ; first use starts OFF; adjusting a slider, mirror or reset automatically turns filters ON. The compact two-column panel uses icons for its sliders, with cropped zoom alongside brightness, contrast and saturation, plus mirror, reset and power icons in the header. Screenshots still capture original pixels. Live visual acceptance is pending. See [video filters](docs/features/video-filters.md).
 
 ### Expand / shrink video
 

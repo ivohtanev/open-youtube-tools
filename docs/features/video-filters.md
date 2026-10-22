@@ -10,8 +10,8 @@ Click **Video filters** beside EQ. The compact panel has two columns of icon-lab
 
 - Brightness: 50–150%; contrast: 50–150%; saturation: 0–200%. All default to 100%.
 - Horizontal sliders support native keyboard interaction and mouse-wheel steps of 1%. Ctrl/Meta-wheel keeps browser behavior. Double-click a slider to restore 100%.
-- First use starts OFF. Adjustments can be edited while OFF; turning ON applies them. The preference and settings survive reloads, navigation and browser restarts.
-- The reset icon restores all values, including zoom and mirror, without changing ON/OFF.
+- First use starts OFF. Adjusting a slider (including wheel or double-click reset), toggling mirror or using reset automatically turns filters ON and saves that preference. The power button can still turn them OFF. The preference and settings survive reloads, navigation and browser restarts.
+- The reset icon restores all values, including zoom and mirror, and turns filters ON.
 - The main controls include zoom (100–150%, cropped to the original frame) and horizontal mirror. Mirroring also reverses text baked into the video. Both are saved with the other settings.
 
 Hiding the tool through Functions keeps processing active, matching EQ. Turn it OFF before hiding it if processing should stop.
