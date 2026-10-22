@@ -212,18 +212,27 @@ button:disabled {
   opacity: 0.8;
   transform: translateY(0);
 }
-.function-option {
+.checkable-menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
   cursor: pointer;
+  border-radius: 6px;
 }
-.function-option svg {
+.settings-panel button:hover:not(:disabled),
+.checkable-menu-item:hover {
+  background: #202020;
+}
+.checkable-menu-item:focus-within {
+  outline: 2px solid #a6e3c0;
+  outline-offset: -2px;
+}
+.checkable-menu-item svg {
   width: 20px;
   height: 20px;
 }
-.function-option input {
+.checkable-menu-item input {
   accent-color: #a6e3c0;
 }
 

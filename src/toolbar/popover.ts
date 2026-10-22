@@ -108,8 +108,13 @@ export function createPopover(
       },
     );
   };
-  const scheduleClose = () => {
+  const scheduleClose = (event: FocusEvent) => {
     cancelClose();
+    // Pointer clicks on panel padding or disabled controls can clear focus.
+    // Only dismiss for an actual focus move outside this panel and its trigger.
+    const next = event.relatedTarget;
+    if (!(next instanceof Node) || panel.contains(next) || next === trigger)
+      return;
     timer = setTimeout(() => {
       const active =
         panel.getRootNode() instanceof ShadowRoot
