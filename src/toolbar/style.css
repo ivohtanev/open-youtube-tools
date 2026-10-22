@@ -227,6 +227,116 @@ button:disabled {
   accent-color: #a6e3c0;
 }
 
+.eq-panel {
+  width: 440px;
+  max-height: none;
+}
+.eq-panel .panel-heading {
+  justify-content: space-between;
+}
+.eq-panel .panel-heading button {
+  border-color: #ffffff30;
+  padding: 4px 12px;
+}
+.eq-switch-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.eq-panel .panel-heading .eq-switch {
+  width: 42px;
+  height: 24px;
+  min-height: 24px;
+  padding: 2px;
+  border: 1px solid #ffffff50;
+  border-radius: 999px;
+  background: #555;
+}
+.eq-switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eee;
+  transition: transform 150ms ease;
+}
+.eq-panel .panel-heading .eq-switch[aria-checked="true"] {
+  background: #8ab4f8;
+}
+.eq-switch[aria-checked="true"] .eq-switch-thumb {
+  background: #202124;
+  transform: translateX(18px);
+}
+.eq-bands {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px 0 8px;
+}
+.eq-approach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.eq-approach select {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #ffffff30;
+  border-radius: 6px;
+  background: #242424;
+  color: #fff;
+  font: inherit;
+  color-scheme: dark;
+}
+.eq-approach select:focus-visible {
+  outline: 2px solid #a6e3c0;
+  outline-offset: 2px;
+}
+.eq-band {
+  display: flex;
+  flex: 1 0 30px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.eq-band input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 24px;
+  height: 130px;
+  accent-color: #8ab4f8;
+  cursor: pointer;
+}
+.eq-band input:focus-visible {
+  outline: 2px solid #a6e3c0;
+  outline-offset: 2px;
+}
+.eq-note {
+  max-width: 100%;
+  white-space: normal;
+  color: #bdbdbd;
+  font-size: 11px;
+  margin: 8px 0 0;
+}
+/* Keep controls reachable in short windows without making the popover's
+   protruding arrow create a scrollbar at normal viewport heights. */
+@media (max-height: 500px) {
+  .eq-panel {
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+  }
+}
+.tool .icon-button[data-modified="true"][aria-label="Equalizer"] {
+  filter: drop-shadow(0 0 4px #8ab4f880);
+}
+
 .oyt-mini-player {
   position: fixed;
   z-index: 2147483645;

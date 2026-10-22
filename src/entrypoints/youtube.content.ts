@@ -4,6 +4,8 @@ import { browser } from "wxt/browser";
 import { positionToolbar } from "../platform/youtube/toolbar-layout";
 import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
+import { equalizer } from "../features/equalizer";
+import { createEqualizer } from "../platform/youtube/equalizer";
 import { expandPlayer } from "../features/expand-player";
 import { cinema } from "../features/cinema";
 import { screenshot } from "../features/screenshot";
@@ -25,9 +27,35 @@ export default defineContentScript({
     ctx.onInvalidated(() => expandedPlayer.dispose());
     ctx.onInvalidated(() => player.dispose());
     const saved = await browser.storage.local
-      .get(["toolbarPosition", "hiddenTools", "miniPlayerEnabled"])
+      .get([
+        "toolbarPosition",
+        "hiddenTools",
+        "miniPlayerEnabled",
+        "equalizerGains",
+        "equalizerApproach",
+        "equalizerEnabled",
+      ])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
+    const audio = createEqualizer(document, {
+      gains: saved.equalizerGains,
+      approach: saved.equalizerApproach,
+      enabled: saved.equalizerEnabled,
+      persistGains: (equalizerGains) => {
+        void browser.storage.local.set({ equalizerGains }).catch(console.warn);
+      },
+      persistApproach: (equalizerApproach) => {
+        void browser.storage.local
+          .set({ equalizerApproach })
+          .catch(console.warn);
+      },
+      persistEnabled: (equalizerEnabled) => {
+        void browser.storage.local
+          .set({ equalizerEnabled })
+          .catch(console.warn);
+      },
+    });
+    ctx.onInvalidated(() => audio.dispose());
     const miniPlayer = createMiniPlayer(
       document,
       saved.miniPlayerEnabled !== false,
@@ -53,6 +81,7 @@ export default defineContentScript({
           player,
           [
             playbackSpeed,
+            equalizer(audio),
             expandPlayer(expandedPlayer),
             cinema((toolbar, onChange) =>
               createCinema(document, toolbar, onChange),
