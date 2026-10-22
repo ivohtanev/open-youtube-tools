@@ -227,6 +227,58 @@ button:disabled {
   accent-color: #a6e3c0;
 }
 
+.eq-panel {
+  width: 440px;
+}
+.eq-panel .panel-heading {
+  justify-content: space-between;
+}
+.eq-panel .panel-heading button {
+  border-color: #ffffff30;
+  padding: 4px 12px;
+}
+.eq-bands {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 16px 0 8px;
+}
+.eq-band {
+  display: flex;
+  flex: 1 0 30px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.eq-band input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 24px;
+  height: 130px;
+  accent-color: #8ab4f8;
+  cursor: pointer;
+}
+.eq-band input:focus-visible {
+  outline: 2px solid #a6e3c0;
+  outline-offset: 2px;
+}
+.eq-note {
+  max-width: 100%;
+  white-space: normal;
+  color: #bdbdbd;
+  font-size: 11px;
+  margin: 8px 0 0;
+}
+.eq-panel {
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+}
+.tool .icon-button[data-modified="true"][aria-label="Equalizer"] {
+  filter: drop-shadow(0 0 4px #8ab4f880);
+}
+
 .oyt-mini-player {
   position: fixed;
   z-index: 2147483645;

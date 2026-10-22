@@ -19,6 +19,10 @@ Load `.output/chrome-mv3` as an unpacked extension in Brave, Chrome or Edge, the
 
 Scroll over the speed icon to change playback speed by 0.02 per wheel event, within 0.25–2×. Ctrl-scroll keeps browser zoom. Click the icon to open its panel, then expand the controls for quarter-step decrease/increase buttons and reset to 1×. The panel reflects native YouTube speed changes. Extension changes briefly show the resulting speed using YouTube's native speed-text layer when available. Speed is not saved between sessions. See [playback speed](docs/features/playback-speed.md).
 
+### Experimental equalizer
+
+Click the EQ icon for ten frequency sliders, Reset and ON/OFF. The icon lights only when EQ is ON. Band gains are saved; processing starts OFF on page load. This is an opt-in audio-routing prototype for disposable test tabs: if sound disappears, reload the page. Live Brave/YouTube audio validation is pending. See [equalizer behavior and test steps](docs/features/equalizer.md).
+
 ### Expand / shrink video
 
 Click the expand icon to make the existing player span the available page width, with native controls spanning that full player width (including their usual 12px side insets). The picture fits maximally inside this stage and the viewport height, as in theater mode. The original video proportions are preserved, including portrait and ultrawide videos; height takes priority when full width would cut off the picture. Only the YouTube masthead is kept above the player: the stage fills all remaining viewport height. Our toolbar sits centered immediately below the player. The picture retains the full available height; scroll slightly to reach the toolbar when the player fills the viewport. Click the shrink icon to restore YouTube's layout. Pressing YouTube's T shortcut or clicking its native theater/default button automatically exits expand and hands control back to the native mode.
