@@ -22,6 +22,8 @@ Read this index before changing architecture or adding a feature.
 
 - [Disable the experimental watch-page layout](research/disable-experimental-watch-layout.md): owner-tested Brave filters and a deferred, persistent opt-out icon proposal with a pre-release decision gate.
 
+- [Multiband equalizer feasibility](research/multiband-equalizer-feasibility.md): supported frequencies, proposed band controls, Web Audio routing options, permissions, lifecycle risks and validation gate.
+
 ## Documentation rules
 
 - Write documentation and code comments in English.
