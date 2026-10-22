@@ -229,6 +229,7 @@ button:disabled {
 
 .eq-panel {
   width: 440px;
+  max-height: none;
 }
 .eq-panel .panel-heading {
   justify-content: space-between;
@@ -241,6 +242,7 @@ button:disabled {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 16px 0 8px;
 }
 .eq-approach {
@@ -293,9 +295,13 @@ button:disabled {
   font-size: 11px;
   margin: 8px 0 0;
 }
-.eq-panel {
-  max-height: calc(100dvh - 16px);
-  overflow-y: auto;
+/* Keep controls reachable in short windows without making the popover's
+   protruding arrow create a scrollbar at normal viewport heights. */
+@media (max-height: 500px) {
+  .eq-panel {
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+  }
 }
 .tool .icon-button[data-modified="true"][aria-label="Equalizer"] {
   filter: drop-shadow(0 0 4px #8ab4f880);
