@@ -9,6 +9,7 @@ Read this index before changing architecture or adding a feature.
 | [Local development](guides/local-development.md)                 | Install, build, load and validate the extension          |
 | [Adding a feature](guides/adding-a-feature.md)                   | Implementation and documentation checklist               |
 | [Playback speed](features/playback-speed.md)                     | First feature's behavior, contracts and limitations      |
+| [Video filters](features/video-filters.md)                       | Saved picture adjustments and experimental zoom/mirror   |
 | [Mini player](features/mini-player.md)                           | Scroll-triggered picture and saved playback setting      |
 | [Expand player](features/expand-player.md)                       | Viewport-fit picture and reversible full-width layout    |
 | [Cinema mode](features/cinema.md)                                | Page dimming with clear player and toolbar windows       |

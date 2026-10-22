@@ -6,6 +6,8 @@ import { createPlayer } from "../platform/youtube/player";
 import { playbackSpeed } from "../features/playback-speed";
 import { equalizer } from "../features/equalizer";
 import { createEqualizer } from "../platform/youtube/equalizer";
+import { videoFilters } from "../features/video-filters";
+import { createVideoFilters } from "../platform/youtube/video-filters";
 import { expandPlayer } from "../features/expand-player";
 import { cinema } from "../features/cinema";
 import { screenshot } from "../features/screenshot";
@@ -35,6 +37,8 @@ export default defineContentScript({
         "equalizerProfile",
         "equalizerApproach",
         "equalizerEnabled",
+        "videoFilterSettings",
+        "videoFiltersEnabled",
       ])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
@@ -63,6 +67,21 @@ export default defineContentScript({
       },
     });
     ctx.onInvalidated(() => audio.dispose());
+    const filters = createVideoFilters(document, {
+      settings: saved.videoFilterSettings,
+      enabled: saved.videoFiltersEnabled,
+      persistSettings: (videoFilterSettings) => {
+        void browser.storage.local
+          .set({ videoFilterSettings })
+          .catch(console.warn);
+      },
+      persistEnabled: (videoFiltersEnabled) => {
+        void browser.storage.local
+          .set({ videoFiltersEnabled })
+          .catch(console.warn);
+      },
+    });
+    ctx.onInvalidated(() => filters.dispose());
     const miniPlayer = createMiniPlayer(
       document,
       saved.miniPlayerEnabled !== false,
@@ -89,6 +108,7 @@ export default defineContentScript({
           [
             playbackSpeed,
             equalizer(audio),
+            videoFilters(filters),
             expandPlayer(expandedPlayer),
             cinema((toolbar, onChange) =>
               createCinema(document, toolbar, onChange),

@@ -27,6 +27,8 @@ This replaces the proposed general `shared/controllers`, `models` and `api` buck
 
 ## Runtime and cleanup
 
+The [video filters](../features/video-filters.md) use `VideoFiltersPort` to keep picture controls independent of YouTube selectors. The adapter applies reversible CSS to the current video and follows replacements and navigation. The entry point persists validated settings and ON/OFF locally, matching the EQ callback pattern. Temporary original comparison is session-only; experimental zoom and mirror share the settings and cleanup lifecycle.
+
 The experimental [equalizer](../features/equalizer.md) uses `EqualizerPort` in
 `core/equalizer.ts`. Its platform adapter owns one Web Audio graph per activated
 video element; the feature owns only controls. Invalidation flattens the graph
