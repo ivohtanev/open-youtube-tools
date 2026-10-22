@@ -1,5 +1,9 @@
 # Testing and compatibility
 
+## Owner acceptance — 2026-10-22 (both watch-page designs)
+
+Ivo reported testing the existing features in both the experimental A/B watch-page design and the normal design, with everything working well in his assessment. The normal design was restored using the [recorded Brave custom filters](research/disable-experimental-watch-layout.md). This is owner-reported manual acceptance, not an independently repeated test or a case-by-case compatibility record. Browser version, individual scenarios and console logs were not supplied. This newer report supplements the earlier records below; it does not establish coverage of every untested scenario.
+
 ## Automated checks
 
 Run `npm run check`. TypeScript checks the contracts, Vitest/jsdom checks behavior and disposal, Prettier checks formatting, and WXT verifies extension packaging. CI runs the same command on Node 24. Tests use local fixtures and do not contact YouTube.
