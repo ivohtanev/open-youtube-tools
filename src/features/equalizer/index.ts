@@ -157,13 +157,18 @@ export function equalizer(audio: EqualizerPort): Tool {
         toggle.setAttribute("aria-checked", String(state.requestedEnabled));
         toggle.setAttribute("aria-busy", String(state.pending));
         approachSelect.value = state.approach;
-        level.textContent = state.enabled
-          ? `Overall compensation: ${state.preampDb.toFixed(1)} dB`
-          : state.requestedEnabled
-            ? "Waiting for playback or audio activation..."
-            : "EQ is OFF · your settings are saved";
-        status.textContent = state.error;
-        status.hidden = !state.error;
+        level.textContent =
+          state.approach === "response"
+            ? `Overall compensation: ${state.preampDb.toFixed(1)} dB`
+            : "If you experience audio problems, switch to Curve Headroom (Compensation).";
+        status.textContent =
+          state.error ||
+          (state.enabled
+            ? ""
+            : state.requestedEnabled
+              ? "Waiting for playback or audio activation..."
+              : "EQ is OFF · your settings are saved");
+        status.hidden = !status.textContent;
         const definition = EQ_PRESETS.find(
           (preset) => preset.id === state.preset,
         )!;

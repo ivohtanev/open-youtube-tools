@@ -52,7 +52,7 @@ it("does not amplify cuts and only measures response for the curve approach", ()
   measure.mockClear();
   expect(getApproach("direct").preampDb([12], measure)).toBe(0);
   expect(getApproach("compressor").preampDb([12], measure)).toBe(0);
-  expect(getApproach("conservative").preampDb([6, -6, 6], measure)).toBe(-12);
+  expect(parseApproach("conservative")).toBe("compressor");
   expect(measure).not.toHaveBeenCalled();
   expect(parseApproach(null)).toBe("compressor");
 });
