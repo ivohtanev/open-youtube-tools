@@ -33,23 +33,28 @@ export default defineContentScript({
         "miniPlayerEnabled",
         "equalizerGains",
         "equalizerApproach",
+        "equalizerEnabled",
       ])
       .catch(() => ({}) as Record<string, unknown>);
     if (ctx.isInvalid) return;
-    const audio = createEqualizer(
-      document,
-      saved.equalizerGains,
-      (equalizerGains) => {
+    const audio = createEqualizer(document, {
+      gains: saved.equalizerGains,
+      approach: saved.equalizerApproach,
+      enabled: saved.equalizerEnabled,
+      persistGains: (equalizerGains) => {
         void browser.storage.local.set({ equalizerGains }).catch(console.warn);
       },
-      undefined,
-      saved.equalizerApproach,
-      (equalizerApproach) => {
+      persistApproach: (equalizerApproach) => {
         void browser.storage.local
           .set({ equalizerApproach })
           .catch(console.warn);
       },
-    );
+      persistEnabled: (equalizerEnabled) => {
+        void browser.storage.local
+          .set({ equalizerEnabled })
+          .catch(console.warn);
+      },
+    });
     ctx.onInvalidated(() => audio.dispose());
     const miniPlayer = createMiniPlayer(
       document,

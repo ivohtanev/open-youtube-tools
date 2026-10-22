@@ -29,10 +29,13 @@ This replaces the proposed general `shared/controllers`, `models` and `api` buck
 
 The experimental [equalizer](../features/equalizer.md) uses `EqualizerPort` in
 `core/equalizer.ts`. Its platform adapter owns one Web Audio graph per activated
-video element; the feature owns only controls. Invalidation and tool hiding
-flatten the graph instead of closing its context, because a media-element source
-cannot be detached to restore native output. The entry point persists band gains
-only. Live audio routing remains an explicit acceptance gate.
+video element; the feature owns only controls. Invalidation flattens the graph
+instead of closing its context, because a media-element source cannot be
+detached to restore native output. Hiding the controls preserves processing.
+The entry point persists band gains, approach and ON/OFF preference. The adapter
+keeps the requested preference separate from active routing and restores saved
+ON across videos, retrying on playback or interaction when activation must wait.
+Live audio routing remains an explicit acceptance gate.
 
 The [expand player](../features/expand-player.md) adds `ExpandPlayerPort`. Its YouTube adapter applies reversible layout styles and fills the available viewport height below the masthead. Browser object-fit containment maximizes the original picture without cropping. The icon-bearing feature supplies the toggle; it resets the layout when unmounted. While expanded, player-docked toolbar positioning centers below the player and reserves its normal document-flow height without reducing the picture height. Saved bottom docking remains available. Fullscreen/PiP suspend expansion, while the scroll mini player's video sizing remains independent through an explicit selector exclusion.
 

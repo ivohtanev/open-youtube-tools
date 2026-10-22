@@ -21,7 +21,7 @@ Scroll over the speed icon to change playback speed by 0.02 per wheel event, wit
 
 ### Experimental equalizer
 
-Click the EQ icon for ten frequency sliders, an EQ approach dropdown, Reset and ON/OFF. Choose Curve headroom (recommended default), Direct boost, Boost + compressor or Conservative headroom. The panel explains each approach and shows its overall compensation. The icon lights only when EQ is ON. Band gains and approach are saved; processing starts OFF on page load. This is an opt-in audio-routing prototype for disposable test tabs: if sound disappears, reload the page. Live Brave/YouTube audio validation is pending. See [equalizer behavior and test steps](docs/features/equalizer.md).
+Click the EQ icon for ten frequency sliders, an EQ approach dropdown, Reset and an OFF/ON switch. Choose Curve headroom, Direct boost, Boost + compressor (default) or Conservative headroom. The dropdown labels and order are unchanged. The panel explains each approach and shows its overall compensation. Band gains, approach and ON/OFF preference are saved locally across refreshes, videos and browser restarts. First use starts OFF; saved ON automatically restores processing when possible. The switch shows the saved preference; the icon lights only while processing is active. Browser autoplay policy may require playback or a page interaction before activation. This is an experimental audio-routing prototype: if sound disappears, reload the page. See [equalizer behavior and test steps](docs/features/equalizer.md).
 
 ### Expand / shrink video
 

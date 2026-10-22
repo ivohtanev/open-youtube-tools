@@ -238,6 +238,36 @@ button:disabled {
   border-color: #ffffff30;
   padding: 4px 12px;
 }
+.eq-switch-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.eq-panel .panel-heading .eq-switch {
+  width: 42px;
+  height: 24px;
+  min-height: 24px;
+  padding: 2px;
+  border: 1px solid #ffffff50;
+  border-radius: 999px;
+  background: #555;
+}
+.eq-switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eee;
+  transition: transform 150ms ease;
+}
+.eq-panel .panel-heading .eq-switch[aria-checked="true"] {
+  background: #8ab4f8;
+}
+.eq-switch[aria-checked="true"] .eq-switch-thumb {
+  background: #202124;
+  transform: translateX(18px);
+}
 .eq-bands {
   display: flex;
   gap: 8px;

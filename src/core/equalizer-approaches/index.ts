@@ -5,7 +5,7 @@ import { conservative } from "./conservative";
 
 export const EQ_APPROACHES = [response, direct, compressor, conservative];
 export type EqualizerApproachId = (typeof EQ_APPROACHES)[number]["id"];
-export const DEFAULT_EQ_APPROACH: EqualizerApproachId = "response";
+export const DEFAULT_EQ_APPROACH: EqualizerApproachId = "compressor";
 
 export function parseApproach(value: unknown): EqualizerApproachId {
   return (

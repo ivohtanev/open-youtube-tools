@@ -25,14 +25,27 @@ export function equalizer(audio: EqualizerPort): Tool {
       const title = document.createElement("strong");
       title.textContent = "Equalizer";
       const toggle = document.createElement("button");
+      toggle.className = "eq-switch";
+      toggle.type = "button";
+      toggle.setAttribute("role", "switch");
       toggle.setAttribute("aria-label", "Enable equalizer");
+      const thumb = document.createElement("span");
+      thumb.className = "eq-switch-thumb";
+      toggle.append(thumb);
       toggle.onclick = () => {
-        void audio.setEnabled(!audio.snapshot().enabled);
+        void audio.setEnabled(!audio.snapshot().requestedEnabled);
       };
+      const switchControl = document.createElement("div");
+      switchControl.className = "eq-switch-control";
+      const offLabel = document.createElement("span");
+      offLabel.textContent = "OFF";
+      const onLabel = document.createElement("span");
+      onLabel.textContent = "ON";
+      switchControl.append(offLabel, toggle, onLabel);
       const reset = document.createElement("button");
       reset.textContent = "Reset";
       reset.onclick = () => audio.reset();
-      heading.append(title, toggle, reset);
+      heading.append(title, switchControl, reset);
       const approachLabel = document.createElement("label");
       approachLabel.className = "eq-approach";
       const approachCaption = document.createElement("span");
@@ -100,18 +113,15 @@ export function equalizer(audio: EqualizerPort): Tool {
       const render = () => {
         const state = audio.snapshot();
         trigger.dataset.modified = String(state.enabled);
-        toggle.textContent = state.pending
-          ? "Starting…"
-          : state.enabled
-            ? "ON"
-            : "OFF";
-        toggle.setAttribute("aria-pressed", String(state.enabled));
-        toggle.disabled = !available || state.pending;
+        toggle.setAttribute("aria-checked", String(state.requestedEnabled));
+        toggle.setAttribute("aria-busy", String(state.pending));
         approachSelect.value = state.approach;
         approachNote.textContent = getApproach(state.approach).description;
         level.textContent = state.enabled
           ? `Overall compensation: ${state.preampDb.toFixed(1)} dB`
-          : "EQ is OFF. Your approach and band settings will apply when enabled.";
+          : state.requestedEnabled
+            ? "EQ is saved ON. Waiting for video playback or audio activation."
+            : "EQ is OFF. Your approach and band settings will apply when enabled.";
         status.textContent = state.error;
         status.hidden = !state.error;
         controls.forEach(({ input, output }, i) => {
@@ -125,7 +135,6 @@ export function equalizer(audio: EqualizerPort): Tool {
         available = state.available;
         trigger.disabled = !available;
         if (!available) {
-          void audio.setEnabled(false);
           popover.close();
         }
         render();
@@ -133,7 +142,6 @@ export function equalizer(audio: EqualizerPort): Tool {
       return () => {
         unsubscribe();
         unsubscribePlayer();
-        void audio.setEnabled(false);
         popover.dispose();
         group.remove();
       };

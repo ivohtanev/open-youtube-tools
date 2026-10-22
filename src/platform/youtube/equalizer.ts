@@ -22,17 +22,31 @@ type Graph = {
   responsePeakDb: (gains: readonly number[]) => number;
 };
 // Sources cannot be recreated for an already-owned element. Keep their audible
-// graph alive in bypass even when the toolbar is hidden or remounted.
+// graph alive through bypass, toolbar remounting and adapter disposal.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
+
+interface EqualizerOptions {
+  gains?: unknown;
+  approach?: unknown;
+  enabled?: unknown;
+  persistGains?: (gains: number[]) => void;
+  persistApproach?: (approach: EqualizerApproachId) => void;
+  persistEnabled?: (enabled: boolean) => void;
+  makeContext?: () => AudioContext;
+}
 
 export function createEqualizer(
   doc: Document,
-  saved: unknown = [],
-  persist: (gains: number[]) => void = () => {},
-  makeContext: () => AudioContext = () => new AudioContext(),
-  savedApproach: unknown = undefined,
-  persistApproach: (approach: EqualizerApproachId) => void = () => {},
+  options: EqualizerOptions = {},
 ): EqualizerPort & { dispose(): void } {
+  const {
+    gains: saved = [],
+    approach: savedApproach,
+    persistGains: persist = () => {},
+    persistApproach = () => {},
+    persistEnabled = () => {},
+    makeContext = () => new AudioContext(),
+  } = options;
   const gains = EQ_FREQUENCIES.map((_, i) =>
     Array.isArray(saved) &&
     typeof saved[i] === "number" &&
@@ -41,6 +55,7 @@ export function createEqualizer(
       : 0,
   );
   let enabled = false;
+  let requestedEnabled = options.enabled === true;
   let approach = parseApproach(savedApproach);
   let preampDb = 0;
   let pending = false;
@@ -49,9 +64,13 @@ export function createEqualizer(
   let graph: Graph | undefined;
   let generation = 0;
   let disposed = false;
+  let startingContext: AudioContext | undefined;
+  let failedTarget: HTMLVideoElement | null = null;
+  let waitingForMedia = false;
   const listeners = new Set<(state: EqualizerState) => void>();
   const snapshot = () => ({
     enabled,
+    requestedEnabled,
     pending,
     gains: [...gains],
     approach,
@@ -97,113 +116,161 @@ export function createEqualizer(
     generation++;
     pending = false;
     enabled = false;
+    startingContext = undefined;
     apply();
     emit();
   };
-  const refresh = () => {
-    if (video && findVideo(doc) !== video) {
+  const refresh = async () => {
+    if (disposed) return;
+    const target = findVideo(doc);
+    if (target !== video) {
       off();
-      video.removeEventListener("emptied", off);
+      video?.removeEventListener("emptied", emptied);
       graph?.context.removeEventListener("statechange", stateChanged);
-      video = null;
-      graph = undefined;
+      video = target;
+      graph = target ? graphs.get(target) : undefined;
+      video?.addEventListener("emptied", emptied);
+      graph?.context.addEventListener("statechange", stateChanged);
+      failedTarget = null;
+      waitingForMedia = false;
     }
+    if (
+      requestedEnabled &&
+      target &&
+      target !== failedTarget &&
+      !waitingForMedia
+    )
+      await activate(target);
+  };
+  const emptied = () => {
+    // Keep the preference and owned source; restart when the new media is ready.
+    waitingForMedia = true;
+    off();
+    failedTarget = null;
   };
   const stateChanged = () => {
     if (graph?.context.state !== "running" && enabled) {
       error =
-        "Audio processing stopped. Turn EQ on again; reload the page if sound is missing.";
+        "EQ is saved ON but audio processing stopped. Play the video or interact with the page to retry.";
       off();
     }
   };
-  const observer = new MutationObserver(refresh);
+  const activate = async (target: HTMLVideoElement) => {
+    if (pending || enabled) return;
+    const request = ++generation;
+    pending = true;
+    error = "";
+    emit();
+    let context: AudioContext | undefined;
+    try {
+      graph = graphs.get(target);
+      context = graph?.context ?? makeContext();
+      startingContext = context;
+      if (context.state !== "running") {
+        error =
+          "EQ is saved ON. Play the video or interact with the page if activation is waiting.";
+        emit();
+      }
+      await context.resume();
+      if (disposed || request !== generation || findVideo(doc) !== target) {
+        if (graphs.get(target)?.context !== context)
+          void context.close().catch(() => {});
+        if (request === generation) off();
+        return;
+      }
+      if (context.state !== "running")
+        throw new Error("Audio context did not start.");
+      if (!graph) {
+        const preamp = context.createGain();
+        const filters = EQ_FREQUENCIES.map((frequency) => {
+          const filter = context!.createBiquadFilter();
+          filter.type = "peaking";
+          filter.frequency.value = Math.min(
+            frequency,
+            (context!.sampleRate / 2) * 0.95,
+          );
+          filter.Q.value = 1.4;
+          return filter;
+        });
+        // Build the downstream path before taking ownership of the element.
+        let tail: AudioNode = preamp;
+        for (const filter of filters) {
+          tail.connect(filter);
+          tail = filter;
+        }
+        tail.connect(context.destination);
+        const compressor = context.createDynamicsCompressor();
+        configureCompressor(compressor);
+        const responsePeakDb = createResponseMeter(context, filters);
+        const source = context.createMediaElementSource(target);
+        source.connect(preamp);
+        graph = {
+          context,
+          preamp,
+          filters,
+          compressor,
+          compressed: false,
+          responsePeakDb,
+        };
+        graphs.set(target, graph);
+      }
+      context.addEventListener("statechange", stateChanged);
+      enabled = true;
+      error = "";
+      failedTarget = null;
+      apply();
+    } catch {
+      if (context && graphs.get(target)?.context !== context)
+        void context.close().catch(() => {});
+      if (disposed || request !== generation) return;
+      enabled = false;
+      failedTarget = target;
+      apply();
+      error = "Could not start EQ. Reload the page if sound is missing.";
+    } finally {
+      if (!disposed && request === generation) {
+        pending = false;
+        startingContext = undefined;
+        emit();
+      }
+    }
+  };
+  const onRefresh = () => {
+    void refresh();
+  };
+  const retry = () => {
+    if (disposed || !requestedEnabled) return;
+    if (pending) {
+      // A new gesture can release a resume() waiting on autoplay policy.
+      void startingContext?.resume().catch(() => {});
+      return;
+    }
+    failedTarget = null;
+    waitingForMedia = false;
+    void refresh();
+  };
+  const observer = new MutationObserver(onRefresh);
   observer.observe(doc.documentElement, { childList: true, subtree: true });
-  doc.addEventListener("yt-navigate-finish", refresh);
-  doc.defaultView?.addEventListener("popstate", refresh);
+  doc.addEventListener("yt-navigate-finish", onRefresh);
+  doc.defaultView?.addEventListener("popstate", onRefresh);
+  doc.addEventListener("play", retry, true);
+  doc.addEventListener("loadedmetadata", retry, true);
+  doc.addEventListener("pointerdown", retry, true);
+  doc.addEventListener("keydown", retry, true);
+  queueMicrotask(onRefresh);
   return {
     snapshot,
     async setEnabled(value) {
       if (disposed) return;
-      if (!value) {
-        off();
-        return;
-      }
-      if (pending || enabled) return;
-      refresh();
-      const target = findVideo(doc);
-      if (!target) {
-        error = "No video available.";
-        emit();
-        return;
-      }
-      const request = ++generation;
-      pending = true;
+      requestedEnabled = value;
+      persistEnabled(value);
       error = "";
-      emit();
-      let context: AudioContext | undefined;
-      try {
-        graph = graphs.get(target);
-        context = graph?.context ?? makeContext();
-        await context.resume();
-        if (disposed || request !== generation || findVideo(doc) !== target) {
-          if (graphs.get(target)?.context !== context)
-            void context.close().catch(() => {});
-          if (request === generation) off();
-          return;
-        }
-        if (context.state !== "running")
-          throw new Error("Audio context did not start.");
-        if (!graph) {
-          const preamp = context.createGain();
-          const filters = EQ_FREQUENCIES.map((frequency) => {
-            const filter = context!.createBiquadFilter();
-            filter.type = "peaking";
-            filter.frequency.value = Math.min(
-              frequency,
-              (context!.sampleRate / 2) * 0.95,
-            );
-            filter.Q.value = 1.4;
-            return filter;
-          });
-          // Build the downstream path before taking ownership of the element.
-          let tail: AudioNode = preamp;
-          for (const filter of filters) {
-            tail.connect(filter);
-            tail = filter;
-          }
-          tail.connect(context.destination);
-          const compressor = context.createDynamicsCompressor();
-          configureCompressor(compressor);
-          const responsePeakDb = createResponseMeter(context, filters);
-          const source = context.createMediaElementSource(target);
-          source.connect(preamp);
-          graph = {
-            context,
-            preamp,
-            filters,
-            compressor,
-            compressed: false,
-            responsePeakDb,
-          };
-          graphs.set(target, graph);
-        }
-        video = target;
-        video.addEventListener("emptied", off);
-        context.addEventListener("statechange", stateChanged);
-        enabled = true;
-        apply();
-      } catch {
-        if (context && graphs.get(target)?.context !== context)
-          void context.close().catch(() => {});
-        if (disposed || request !== generation) return;
-        enabled = false;
-        apply();
-        error = "Could not start EQ. Reload the page if sound is missing.";
-      } finally {
-        if (!disposed && request === generation) {
-          pending = false;
-          emit();
-        }
+      failedTarget = null;
+      waitingForMedia = false;
+      if (!value) off();
+      else {
+        emit();
+        await refresh();
       }
     },
     setGain(index, gain) {
@@ -243,9 +310,13 @@ export function createEqualizer(
       off();
       disposed = true;
       observer.disconnect();
-      doc.removeEventListener("yt-navigate-finish", refresh);
-      doc.defaultView?.removeEventListener("popstate", refresh);
-      video?.removeEventListener("emptied", off);
+      doc.removeEventListener("yt-navigate-finish", onRefresh);
+      doc.defaultView?.removeEventListener("popstate", onRefresh);
+      doc.removeEventListener("play", retry, true);
+      doc.removeEventListener("loadedmetadata", retry, true);
+      doc.removeEventListener("pointerdown", retry, true);
+      doc.removeEventListener("keydown", retry, true);
+      video?.removeEventListener("emptied", emptied);
       graph?.context.removeEventListener("statechange", stateChanged);
       listeners.clear();
     },
