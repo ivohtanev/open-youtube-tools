@@ -65,6 +65,13 @@ export function clearWindow(element: Element, id: string): string {
     parent;
     parent = parent.parentElement
   ) {
+    // Root overflow clips the viewport, not the body's potentially empty box.
+    // The fixed overlay already ends at the viewport boundaries.
+    if (
+      parent === element.ownerDocument.body ||
+      parent === element.ownerDocument.documentElement
+    )
+      continue;
     const style = element.ownerDocument.defaultView!.getComputedStyle(parent);
     if (
       ![style.overflow, style.overflowX, style.overflowY].some((value) =>

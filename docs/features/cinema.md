@@ -4,6 +4,8 @@
 
 The owner confirmed the initial cinema behavior on 2026-10-21. The transition and hover refinement has automated coverage; live validation of this refinement is pending.
 
+On 2026-10-23, live Brave testing reproduced the player dimming regression: YouTube's absolutely positioned app left the scrolling body with a zero-height box, which incorrectly clipped away the player's clear window. Document root boxes are now excluded from ancestor clipping because the fixed overlay is already bounded by the viewport. After the owner reloaded the extension, live YouTube verification showed a clear player with rounded corners and a dimmed surrounding page. Other playback modes remain subject to the manual acceptance matrix below.
+
 ## User behavior
 
 The film icon toggles a black overlay with 87% opacity. The player, including native controls, stays clear. The toolbar stays at 70% brightness and returns to full brightness on hover or visible keyboard focus. CSS transitions fade cinema on/off and toolbar brightness over 180ms; reduced-motion preferences disable transitions. Escape turns cinema off. The active icon uses the toolbar's accent color and pressed state.
