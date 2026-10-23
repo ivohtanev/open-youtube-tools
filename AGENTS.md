@@ -10,8 +10,8 @@
 - For a continuation, keep using the current task's branch and pull request.
 - For an independent task, use a descriptive branch based on the appropriate base. Reuse an existing branch or pull request only when it clearly belongs to that task.
 - Do not mix unrelated changes or create duplicate branches or pull requests.
-- After the first meaningful implementation commit for a task, create a draft pull request if one does not already exist and GitHub access is available. Update the existing pull request as the work continues.
-- Run relevant checks before marking a pull request ready for review. Never merge a pull request automatically.
+- After the first meaningful implementation commit for a task, create a non-draft pull request ready for review if one does not already exist and GitHub access is available. Update the existing pull request as the work continues.
+- Run relevant checks before creating or updating a pull request. Never merge a pull request automatically.
 - Only the repository owner, Ivo, may approve and merge pull requests. Codex must never submit approving reviews, merge pull requests, or enable automatic merging.
 
 ## Task Switching and Work Preservation

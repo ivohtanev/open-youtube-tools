@@ -22,14 +22,14 @@ Before changing files:
 
 - Use a descriptive branch from the appropriate base. Follow the repository's existing branch naming conventions; otherwise use a type prefix such as `feature/`, `fix/`, or `chore/`.
 - Keep unrelated changes in separate branches.
-- After the first meaningful implementation commit, create a draft pull request if one does not already exist and GitHub access is available.
-- Continue updating that pull request, and run relevant checks before marking it ready for review.
+- After the first meaningful implementation commit, create a non-draft pull request ready for review if one does not already exist and GitHub access is available.
+- Continue updating that pull request, and run relevant checks before creating or updating it.
 - Never merge a pull request automatically.
 
 ## Pull Request Approval and Merge Ownership
 
 - Only the repository owner, Ivo, may approve and merge pull requests.
-- Codex may create branches, commit and push task changes, open draft pull requests, update their descriptions, and run checks.
+- Codex may create branches, commit and push task changes, open non-draft pull requests, update their descriptions, and run checks.
 - Codex must never submit approving reviews, merge pull requests, or enable automatic merging. After preparing the pull request, leave approval and merging to Ivo.
 - This ownership rule applies even after all checks pass or a pull request is marked ready for review.
 
