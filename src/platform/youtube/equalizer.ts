@@ -252,6 +252,19 @@ export function createEqualizer(
     waitingForMedia = false;
     void refresh();
   };
+  const changed = () => {
+    if (!requestedEnabled) {
+      requestedEnabled = true;
+      persistEnabled(true);
+    }
+    apply();
+    emit();
+    if (!enabled && !pending) {
+      failedTarget = null;
+      waitingForMedia = false;
+      void refresh();
+    }
+  };
   const observer = new MutationObserver(onRefresh);
   observer.observe(doc.documentElement, { childList: true, subtree: true });
   doc.addEventListener("yt-navigate-finish", onRefresh);
@@ -279,32 +292,28 @@ export function createEqualizer(
     setGain(index, gain) {
       if (disposed || !profile.setGain(index, gain)) return;
       gains = profile.gains();
-      apply();
       if (profile.snapshot().preset === "user") persist([...gains]);
       persistProfile(profile.snapshot());
-      emit();
+      changed();
     },
     setPreset(value) {
       if (disposed || !profile.select(value)) return;
       gains = profile.gains();
-      apply();
       persistProfile(profile.snapshot());
-      emit();
+      changed();
     },
     setApproach(value) {
       if (disposed) return;
       approach = parseApproach(value);
-      apply();
       persistApproach(approach);
-      emit();
+      changed();
     },
     reset() {
       if (disposed || !profile.reset()) return;
       gains = profile.gains();
-      apply();
       if (profile.snapshot().preset === "user") persist([...gains]);
       persistProfile(profile.snapshot());
-      emit();
+      changed();
     },
     subscribe(listener) {
       listeners.add(listener);
