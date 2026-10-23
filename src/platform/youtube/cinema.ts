@@ -1,4 +1,5 @@
 import { findVideo } from "./player";
+import { clearWindow } from "./cinema-geometry";
 
 /** Cut clear windows through a dimmer without altering YouTube's stacking contexts. */
 export function createCinema(
@@ -17,8 +18,9 @@ export function createCinema(
   overlay.style.cssText =
     "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2147483646;";
   const maskId = `oyt-cinema-${crypto.randomUUID()}`;
-  overlay.innerHTML = `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect fill="black"/><rect fill="black"/></mask></defs><rect width="100%" height="100%" fill="black" fill-opacity="0.87" mask="url(#${maskId})"/>`;
-  const holes = overlay.querySelectorAll("mask rect[fill=black]");
+  overlay.innerHTML = `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><g data-hole="player"/><g data-hole="toolbar"/></mask></defs><rect width="100%" height="100%" fill="black" fill-opacity="0.87" mask="url(#${maskId})"/>`;
+  const holes = overlay.querySelectorAll("[data-hole]");
+  const outlines = ["", ""];
   const style = doc.createElementNS(ns, "style");
   style.textContent = `
     svg[data-oyt-cinema] { opacity: 0; transition: opacity 180ms ease; }
@@ -53,14 +55,11 @@ export function createCinema(
       ? video
       : video.closest("#movie_player")!;
     [picture, toolbar].forEach((element, index) => {
-      const rect = element.getBoundingClientRect();
-      for (const [key, value] of Object.entries({
-        x: rect.left,
-        y: rect.top,
-        width: rect.width,
-        height: rect.height,
-      }))
-        holes[index]!.setAttribute(key, String(value));
+      const outline = clearWindow(element, `${maskId}-${index}`);
+      if (outlines[index] !== outline) {
+        holes[index]!.innerHTML = outline;
+        outlines[index] = outline;
+      }
     });
     frame = win.requestAnimationFrame(update);
   }

@@ -37,10 +37,10 @@ it("dims by 87% and cuts clear windows around the player and toolbar", () => {
   cinema.toggle();
   const overlay = document.querySelector("[data-oyt-cinema]")!;
   expect(overlay.querySelector('[fill-opacity="0.87"]')).not.toBeNull();
-  const holes = overlay.querySelectorAll('mask rect[fill="black"]');
-  expect(holes[0]?.getAttribute("x")).toBe("20");
-  expect(holes[0]?.getAttribute("height")).toBe("360");
-  expect(holes[1]?.getAttribute("y")).toBe("410");
+  const holes = overlay.querySelectorAll("[data-hole] > path");
+  expect(holes[0]?.getAttribute("d")).toContain("M 20 50 H 660");
+  expect(holes[0]?.getAttribute("d")).toContain("V 410");
+  expect(holes[1]?.getAttribute("d")).toContain("M 20 410");
   expect(overlay.getAttribute("style")).toContain("pointer-events: none");
   cinema.toggle();
   expect(
@@ -69,6 +69,52 @@ it("marks the toolbar for CSS dimming and safely handles toggles during fade-out
     vi.useRealTimers();
   }
 });
+it("updates corner geometry while active and preserves square toolbar corners", () => {
+  toolbar.style.borderBottomLeftRadius = "22px";
+  toolbar.style.borderBottomRightRadius = "22px";
+  cinema.toggle();
+  const hole = document.querySelector('[data-hole="toolbar"]')!;
+  expect(hole.innerHTML).toContain("M 20 410 H 260");
+  expect(hole.innerHTML).toContain("A 22 22");
+  toolbar.style.borderBottomLeftRadius = "0px";
+  toolbar.style.borderBottomRightRadius = "0px";
+  toolbar.style.borderTopLeftRadius = "18px";
+  toolbar.style.borderTopRightRadius = "18px";
+  tick(0);
+  expect(hole.innerHTML).toContain("M 38 410 H 242");
+  expect(hole.innerHTML).toContain("A 18 18");
+  expect(hole.innerHTML).not.toContain("A 22 22");
+});
+it("follows percentage radius changes and rounded player containers", () => {
+  const player = video.parentElement!;
+  const container = document.createElement("div");
+  player.before(container);
+  container.append(player);
+  container.style.overflow = "hidden";
+  container.style.borderTopLeftRadius = "10% 20%";
+  const bounds = vi.spyOn(container, "getBoundingClientRect");
+  bounds.mockReturnValue({
+    left: 20,
+    top: 50,
+    width: 640,
+    height: 360,
+  } as DOMRect);
+  cinema.toggle();
+  const hole = document.querySelector('[data-hole="player"]')!;
+  expect(hole.querySelector("clipPath path")?.getAttribute("d")).toContain(
+    "A 64 72",
+  );
+  bounds.mockReturnValue({
+    left: 20,
+    top: 50,
+    width: 320,
+    height: 180,
+  } as DOMRect);
+  tick(0);
+  expect(hole.querySelector("clipPath path")?.getAttribute("d")).toContain(
+    "A 32 36",
+  );
+});
 it("tracks fullscreen and mini player geometry without moving the video", () => {
   const parent = video.parentElement;
   cinema.toggle();
@@ -88,8 +134,8 @@ it("tracks fullscreen and mini player geometry without moving the video", () => 
     parent,
   );
   expect(
-    document.querySelector('mask rect[fill="black"]')?.getAttribute("width"),
-  ).toBe("320");
+    document.querySelector("[data-hole] > path")?.getAttribute("d"),
+  ).toContain("H 332");
   expect(video.parentElement).toBe(parent);
   Object.defineProperty(document, "fullscreenElement", {
     configurable: true,

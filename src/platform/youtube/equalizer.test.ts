@@ -75,7 +75,8 @@ it("restores selected presets while OFF and ON and preserves them across video r
       expect(context.createMediaElementSource).toHaveBeenCalledTimes(2);
     } else {
       audio.setPreset("movie");
-      expect(makeContext).not.toHaveBeenCalled();
+      await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+      expect(makeContext).toHaveBeenCalledOnce();
     }
     audio.setPreset("user");
     expect(audio.snapshot().gains[0]).toBe(3);
@@ -88,7 +89,7 @@ it("restores selected presets while OFF and ON and preserves them across video r
   }
 });
 
-it("edits every preset in Shadow DOM, fine-tunes with wheel, and restores only the selected curve", () => {
+it("edits every preset in Shadow DOM, fine-tunes with wheel, and restores only the selected curve", async () => {
   const { audio, makeContext, persistProfile } = fixture([4]);
   const player = createPlayer(document);
   const host = document.createElement("div");
@@ -155,7 +156,8 @@ it("edits every preset in Shadow DOM, fine-tunes with wheel, and restores only t
   expect(container.querySelector(".eq-preset-overlay")).toBeNull();
   expect(container.textContent).toContain("Made with AI");
   expect(container.textContent).not.toContain("Experimental");
-  expect(makeContext).not.toHaveBeenCalled();
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+  expect(makeContext).toHaveBeenCalledOnce();
   dispose();
   player.dispose();
   audio.dispose();
@@ -340,17 +342,109 @@ it("routes through the compressor only in its active mode and restores dry bypas
   audio.dispose();
 });
 
-it("changes and saves the approach while OFF without creating an audio context", () => {
+it("automatically enables and saves EQ when changing the approach while OFF", async () => {
   const { audio, makeContext, persistApproach } = fixture([], "direct");
   expect(audio.snapshot().approach).toBe("direct");
   audio.setApproach("compressor");
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
   expect(audio.snapshot()).toMatchObject({
     approach: "compressor",
-    enabled: false,
+    enabled: true,
+    requestedEnabled: true,
     preampDb: 0,
   });
   expect(persistApproach).toHaveBeenLastCalledWith("compressor");
+  expect(makeContext).toHaveBeenCalledOnce();
+  audio.dispose();
+});
+
+it.each(["gain", "preset", "approach", "reset"])(
+  "enables EQ on %s edits, persists ON once and reuses the graph after OFF",
+  async (edit) => {
+    const { audio, context, persistEnabled } = fixture([4]);
+    const change = () => {
+      if (edit === "gain") audio.setGain(0, 5);
+      if (edit === "preset") audio.setPreset("music");
+      if (edit === "approach") audio.setApproach("response");
+      if (edit === "reset") audio.reset();
+    };
+    change();
+    expect(audio.snapshot().requestedEnabled).toBe(true);
+    await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+    audio.setGain(1, 2);
+    expect(persistEnabled).toHaveBeenCalledExactlyOnceWith(true);
+    await audio.setEnabled(false);
+    expect(audio.snapshot().enabled).toBe(false);
+    audio.setGain(2, 3);
+    await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+    expect(context.createMediaElementSource).toHaveBeenCalledOnce();
+    expect(persistEnabled.mock.calls.map(([value]) => value)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+    audio.dispose();
+  },
+);
+
+it("does not enable EQ for rejected edits or restoring saved OFF settings", async () => {
+  const { audio, makeContext, persistEnabled } = fixture([4]);
+  audio.setGain(-1, 3);
+  audio.setGain(0, NaN);
+  audio.setPreset("invalid" as "music");
+  await Promise.resolve();
+  expect(audio.snapshot()).toMatchObject({
+    requestedEnabled: false,
+    enabled: false,
+  });
   expect(makeContext).not.toHaveBeenCalled();
+  expect(persistEnabled).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
+it("keeps one pending activation during rapid edits and respects explicit OFF", async () => {
+  const { audio, context, makeContext } = fixture();
+  let resume!: () => void;
+  context.resume.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        resume = resolve;
+      }),
+  );
+  audio.setGain(0, 3);
+  audio.setGain(1, 4);
+  audio.setPreset("music");
+  expect(audio.snapshot()).toMatchObject({
+    requestedEnabled: true,
+    pending: true,
+  });
+  expect(makeContext).toHaveBeenCalledOnce();
+  await audio.setEnabled(false);
+  resume();
+  await Promise.resolve();
+  expect(audio.snapshot()).toMatchObject({
+    requestedEnabled: false,
+    enabled: false,
+    pending: false,
+  });
+  expect(context.createMediaElementSource).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
+it("reports failed automatic startup and retries on the next edit", async () => {
+  const { audio, context, persistEnabled } = fixture();
+  context.resume.mockRejectedValueOnce(new Error("Audio unavailable"));
+  audio.setGain(0, 3);
+  await vi.waitFor(() => expect(audio.snapshot().pending).toBe(false));
+  expect(audio.snapshot()).toMatchObject({
+    requestedEnabled: true,
+    enabled: false,
+  });
+  expect(audio.snapshot().error).toContain("Could not start EQ");
+  audio.setGain(1, 4);
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+  expect(audio.snapshot().gains.slice(0, 2)).toEqual([3, 4]);
+  expect(persistEnabled).toHaveBeenCalledExactlyOnceWith(true);
   audio.dispose();
 });
 
@@ -575,9 +669,8 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   sliders[0]!.value = "5.5";
   sliders[0]!.dispatchEvent(new Event("input"));
   expect(audio.snapshot().gains[0]).toBe(5.5);
-  expect(trigger.dataset.modified).toBe("false");
-  toggle.click();
-  await Promise.resolve();
+  expect(toggle.getAttribute("aria-checked")).toBe("true");
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
   expect(toggle.getAttribute("role")).toBe("switch");
   expect(toggle.getAttribute("aria-checked")).toBe("true");
   expect(toggle.previousElementSibling?.textContent).toBe("OFF");

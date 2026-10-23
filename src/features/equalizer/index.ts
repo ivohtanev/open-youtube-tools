@@ -167,7 +167,7 @@ export function equalizer(audio: EqualizerPort): Tool {
             ? ""
             : state.requestedEnabled
               ? "Waiting for playback or audio activation..."
-              : "EQ is OFF · your settings are saved");
+              : "");
         status.hidden = !status.textContent;
         const definition = EQ_PRESETS.find(
           (preset) => preset.id === state.preset,
