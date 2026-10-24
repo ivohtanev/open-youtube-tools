@@ -13,6 +13,8 @@ function box(element: HTMLElement, width = 200, height = 100) {
 
 afterEach(() => {
   document.body.replaceChildren();
+  document.body.removeAttribute("style");
+  document.documentElement.removeAttribute("style");
   vi.restoreAllMocks();
 });
 
@@ -60,4 +62,25 @@ it("intersects all clipping ancestors without inheriting unrelated rounding", ()
   expect(clearWindow(element, "test")).toContain("A 16 16");
   parent.style.overflow = "visible";
   expect(clearWindow(element, "test")).not.toContain("clipPath");
+});
+
+it("ignores zero-height document boxes while preserving rounded player clipping", () => {
+  const parent = box(document.createElement("div"));
+  const element = box(document.createElement("div"));
+  parent.style.overflow = "hidden";
+  parent.style.borderTopLeftRadius = "12px";
+  parent.append(element);
+  document.body.append(parent);
+  // YouTube positions its app absolutely, leaving the scrolling body empty.
+  box(document.body, 1520, 0);
+  box(document.documentElement, 1520, 0);
+  document.body.style.overflowX = "auto";
+  document.body.style.overflowY = "scroll";
+  document.documentElement.style.overflow = "auto";
+
+  const window = clearWindow(element, "test");
+  expect(window.match(/<clipPath /g)).toHaveLength(1);
+  expect(window).toContain("A 12 12");
+  expect(window).toContain('fill="black"');
+  expect(window).not.toContain("1520");
 });
