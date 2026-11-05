@@ -713,6 +713,28 @@ it("keeps saved ON across non-watch navigation and reuses the source when return
   audio.dispose();
 });
 
+it("keeps EQ applied when the same video moves to the native miniplayer", async () => {
+  const { audio, context, persistEnabled } = fixture([4], "direct", true);
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+
+  const player = document.querySelector("#movie_player")!;
+  player.classList.add("ytp-player-minimized");
+  history.replaceState(null, "", "/");
+  document.dispatchEvent(new Event("yt-navigate-finish"));
+  expect(audio.snapshot()).toMatchObject({
+    enabled: true,
+    gains: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  });
+
+  player.classList.remove("ytp-player-minimized");
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(false));
+  player.classList.add("ytp-player-minimized");
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+  expect(context.createMediaElementSource).toHaveBeenCalledOnce();
+  expect(persistEnabled).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
 it("keeps the switch operable while restored audio is waiting for permission", async () => {
   const { audio, context, persistEnabled } = fixture([], undefined, true);
   let resume!: () => void;

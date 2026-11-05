@@ -29,6 +29,17 @@ type Graph = {
 // graph alive through bypass, toolbar remounting and adapter disposal.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
 
+function findEqualizerVideo(doc: Document): HTMLVideoElement | null {
+  return (
+    findVideo(doc) ??
+    doc.querySelector<HTMLVideoElement>(
+      "#movie_player.ytp-player-minimized video.html5-main-video, " +
+        "ytd-miniplayer[active] #movie_player video.html5-main-video, " +
+        ".ytdMiniplayerComponentVisible #movie_player video.html5-main-video",
+    )
+  );
+}
+
 interface EqualizerOptions {
   gains?: unknown;
   profile?: unknown;
@@ -125,7 +136,7 @@ export function createEqualizer(
   };
   const refresh = async () => {
     if (disposed) return;
-    const target = findVideo(doc);
+    const target = findEqualizerVideo(doc);
     if (target !== video) {
       off();
       video?.removeEventListener("emptied", emptied);
@@ -175,7 +186,11 @@ export function createEqualizer(
         emit();
       }
       await context.resume();
-      if (disposed || request !== generation || findVideo(doc) !== target) {
+      if (
+        disposed ||
+        request !== generation ||
+        findEqualizerVideo(doc) !== target
+      ) {
         if (graphs.get(target)?.context !== context)
           void context.close().catch(() => {});
         if (request === generation) off();
@@ -265,8 +280,24 @@ export function createEqualizer(
       void refresh();
     }
   };
-  const observer = new MutationObserver(onRefresh);
-  observer.observe(doc.documentElement, { childList: true, subtree: true });
+  const observer = new MutationObserver((records) => {
+    if (
+      records.some(
+        (record) =>
+          record.type === "childList" ||
+          (record.target as Element).matches(
+            "#movie_player, ytd-miniplayer, .ytdMiniplayerComponentHost",
+          ),
+      )
+    ) {
+      onRefresh();
+    }
+  });
+  observer.observe(doc.documentElement, {
+    childList: true,
+    subtree: true,
+    attributeFilter: ["active", "class"],
+  });
   doc.addEventListener("yt-navigate-finish", onRefresh);
   doc.defaultView?.addEventListener("popstate", onRefresh);
   doc.addEventListener("play", retry, true);
