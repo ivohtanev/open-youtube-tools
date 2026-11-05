@@ -1,4 +1,3 @@
-import { findVideo } from "./player";
 import { createResponseMeter } from "./equalizer-response";
 import {
   getApproach,
@@ -28,6 +27,9 @@ type Graph = {
 // Sources cannot be recreated for an already-owned element. Keep their audible
 // graph alive through bypass, toolbar remounting and adapter disposal.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
+
+const playbackVideo =
+  "#movie_player video.html5-main-video, #shorts-player video.html5-main-video";
 
 interface EqualizerOptions {
   gains?: unknown;
@@ -67,6 +69,7 @@ export function createEqualizer(
   let generation = 0;
   let disposed = false;
   let startingContext: AudioContext | undefined;
+  let sharedContext: AudioContext | undefined;
   let failedTarget: HTMLVideoElement | null = null;
   let waitingForMedia = false;
   const listeners = new Set<(state: EqualizerState) => void>();
@@ -119,20 +122,32 @@ export function createEqualizer(
     generation++;
     pending = false;
     enabled = false;
+    const context = startingContext;
     startingContext = undefined;
+    if (context && context !== sharedContext && context !== graph?.context)
+      void context.close().catch(() => {});
     apply();
     emit();
   };
-  const refresh = async () => {
+  const refresh = async (playing?: HTMLVideoElement) => {
     if (disposed) return;
-    const target = findVideo(doc);
+    // YouTube can move a playing element before showing the miniplayer.
+    const target =
+      playing ??
+      (video && (video.isConnected || (!video.paused && !video.ended))
+        ? video
+        : doc.querySelector<HTMLVideoElement>(playbackVideo));
     if (target !== video) {
       off();
       video?.removeEventListener("emptied", emptied);
+      video?.removeEventListener("pause", onRefresh);
+      video?.removeEventListener("ended", onRefresh);
       graph?.context.removeEventListener("statechange", stateChanged);
       video = target;
       graph = target ? graphs.get(target) : undefined;
       video?.addEventListener("emptied", emptied);
+      video?.addEventListener("pause", onRefresh);
+      video?.addEventListener("ended", onRefresh);
       graph?.context.addEventListener("statechange", stateChanged);
       failedTarget = null;
       waitingForMedia = false;
@@ -167,7 +182,7 @@ export function createEqualizer(
     let context: AudioContext | undefined;
     try {
       graph = graphs.get(target);
-      context = graph?.context ?? makeContext();
+      context = graph?.context ?? sharedContext ?? makeContext();
       startingContext = context;
       if (context.state !== "running") {
         error =
@@ -175,12 +190,7 @@ export function createEqualizer(
         emit();
       }
       await context.resume();
-      if (disposed || request !== generation || findVideo(doc) !== target) {
-        if (graphs.get(target)?.context !== context)
-          void context.close().catch(() => {});
-        if (request === generation) off();
-        return;
-      }
+      if (disposed || request !== generation) return;
       if (context.state !== "running")
         throw new Error("Audio context did not start.");
       if (!graph) {
@@ -217,15 +227,16 @@ export function createEqualizer(
         };
         graphs.set(target, graph);
       }
+      sharedContext = context;
       context.addEventListener("statechange", stateChanged);
       enabled = true;
       error = "";
       failedTarget = null;
       apply();
     } catch {
-      if (context && graphs.get(target)?.context !== context)
-        void context.close().catch(() => {});
       if (disposed || request !== generation) return;
+      if (context && context !== sharedContext && context !== graph?.context)
+        void context.close().catch(() => {});
       enabled = false;
       failedTarget = target;
       apply();
@@ -241,8 +252,18 @@ export function createEqualizer(
   const onRefresh = () => {
     void refresh();
   };
-  const retry = () => {
+  const retry = (event: Event) => {
     if (disposed || !requestedEnabled) return;
+    const playing =
+      event.type === "play" &&
+      event.target instanceof HTMLVideoElement &&
+      event.target.matches(playbackVideo)
+        ? event.target
+        : undefined;
+    if (playing && playing !== video) {
+      void refresh(playing);
+      return;
+    }
     if (pending) {
       // A new gesture can release a resume() waiting on autoplay policy.
       void startingContext?.resume().catch(() => {});
@@ -265,8 +286,13 @@ export function createEqualizer(
       void refresh();
     }
   };
-  const observer = new MutationObserver(onRefresh);
-  observer.observe(doc.documentElement, { childList: true, subtree: true });
+  const observer = new MutationObserver(() => {
+    if (requestedEnabled && !video?.isConnected) onRefresh();
+  });
+  observer.observe(doc.documentElement, {
+    childList: true,
+    subtree: true,
+  });
   doc.addEventListener("yt-navigate-finish", onRefresh);
   doc.defaultView?.addEventListener("popstate", onRefresh);
   doc.addEventListener("play", retry, true);
@@ -333,6 +359,8 @@ export function createEqualizer(
       doc.removeEventListener("pointerdown", retry, true);
       doc.removeEventListener("keydown", retry, true);
       video?.removeEventListener("emptied", emptied);
+      video?.removeEventListener("pause", onRefresh);
+      video?.removeEventListener("ended", onRefresh);
       graph?.context.removeEventListener("statechange", stateChanged);
       listeners.clear();
     },

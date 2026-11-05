@@ -461,7 +461,7 @@ it("reports source ownership failures without displaying ON", async () => {
 });
 
 it("bypasses the old element and automatically activates its replacement", async () => {
-  const { audio, preamp, context } = fixture([8]);
+  const { audio, preamp, context, makeContext } = fixture([8]);
   await audio.setEnabled(true);
   const replacement = document.createElement("video");
   replacement.className = "html5-main-video";
@@ -472,6 +472,7 @@ it("bypasses the old element and automatically activates its replacement", async
   expect(context.createMediaElementSource).toHaveBeenCalledOnce();
   await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
   expect(context.createMediaElementSource).toHaveBeenCalledTimes(2);
+  expect(makeContext).toHaveBeenCalledOnce();
   audio.dispose();
 });
 
@@ -578,6 +579,7 @@ it("allows OFF while saved ON activation waits for a browser gesture", async () 
     enabled: false,
   });
   await audio.setEnabled(false);
+  expect(context.close).toHaveBeenCalledOnce();
   context.state = "running";
   resume();
   await Promise.resolve();
@@ -696,20 +698,41 @@ it("opens on click, edits sliders, uses a switch and keeps the preference on unm
   audio.dispose();
 });
 
-it("keeps saved ON across non-watch navigation and reuses the source when returning", async () => {
+it("keeps EQ applied across navigation before the miniplayer appears", async () => {
   const { audio, context, persistEnabled } = fixture([], "direct", true);
   await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
-  history.replaceState(null, "", "/results?search_query=test");
+  history.replaceState(null, "", "/");
   document.dispatchEvent(new Event("yt-navigate-finish"));
-  expect(audio.snapshot()).toMatchObject({
-    requestedEnabled: true,
-    enabled: false,
-  });
-  history.replaceState(null, "", "/watch?v=next");
-  document.dispatchEvent(new Event("yt-navigate-finish"));
-  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+  expect(audio.snapshot().enabled).toBe(true);
+
+  const player = document.querySelector("#movie_player")!;
+  const video = player.querySelector("video")!;
+  Object.defineProperty(video, "paused", { value: false });
+  player.remove();
+  await Promise.resolve();
+  expect(audio.snapshot().enabled).toBe(true);
+  document.body.append(player);
+  await Promise.resolve();
+  expect(audio.snapshot().enabled).toBe(true);
   expect(context.createMediaElementSource).toHaveBeenCalledOnce();
   expect(persistEnabled).not.toHaveBeenCalled();
+  audio.dispose();
+});
+
+it("switches EQ to a playing Short outside the watch page", async () => {
+  const { audio, context, makeContext } = fixture([4], "direct", true);
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+
+  history.replaceState(null, "", "/shorts/test");
+  const shorts = document.createElement("div");
+  shorts.id = "shorts-player";
+  shorts.innerHTML = '<video class="html5-main-video"></video>';
+  document.body.append(shorts);
+  const video = shorts.querySelector("video")!;
+  video.dispatchEvent(new Event("play"));
+  await vi.waitFor(() => expect(audio.snapshot().enabled).toBe(true));
+  expect(context.createMediaElementSource).toHaveBeenLastCalledWith(video);
+  expect(makeContext).toHaveBeenCalledOnce();
   audio.dispose();
 });
 
